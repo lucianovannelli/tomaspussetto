@@ -16,11 +16,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'KSC Mobile',
-        short_name: 'KSC Mobile',
+        name: 'Tomás Pussetto',
+        short_name: 'Tomás Pussetto',
         display: 'standalone',
-        theme_color: '#8b5cf6',
-        background_color: '#ffffff',
+        theme_color: '#26160d',
+        background_color: '#f5f0e8',
         start_url: '/login',
         scope: '/',
         icons: [
