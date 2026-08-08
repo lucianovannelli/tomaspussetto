@@ -42,13 +42,13 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
   // Check if already submitted today
   useEffect(() => {
     const today = new Date().toDateString();
-    const lastSubmitted = localStorage.getItem(`ksc_feedback_date_${memberId}`);
+    const lastSubmitted = localStorage.getItem(`tp_feedback_date_${memberId}`) || localStorage.getItem(`ksc_feedback_date_${memberId}`);
     if (lastSubmitted === today) {
       setHasRatedToday(true);
     }
     
     // Check saved dock side
-    const savedSide = localStorage.getItem('ksc_feedback_dock_side');
+    const savedSide = localStorage.getItem('tp_feedback_dock_side') || localStorage.getItem('ksc_feedback_dock_side');
     if (savedSide) {
       // Position will be calculated when container size is measured
     }
@@ -245,8 +245,8 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                     </svg>
                   </button>
                 )}
-                <span className="text-xs font-black uppercase tracking-widest text-brand-600 bg-brand-50 px-2.5 py-1 rounded-md">
-                  KSC Feedback
+                <span className="text-xs font-black uppercase tracking-widest text-[#26160d] bg-[#faf7f2] border border-[#e6dfd5] px-2.5 py-1 rounded-md">
+                  Tomás Feedback
                 </span>
               </div>
               <button
@@ -267,50 +267,28 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
               <div className="flex flex-col gap-4 py-2 animate-fade-in">
                 <div className="text-center space-y-1">
                   <h3 className="text-lg font-black text-slate-900 leading-tight">
-                    ¿Cómo querés calificar tu experiencia?
+                    ¿Cómo viene tu proceso de entrenamiento?
                   </h3>
                   <p className="text-xs font-semibold text-slate-500">
-                    Elegí una de las opciones para continuar
+                    Fuerza, hábitos y equilibrio
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3 mt-2">
-                  {/* Google Maps Button Option */}
-                  <a
-                    href="https://search.google.com/local/writereview?placeid=ChIJ24SC_Wmrt5UR1_Ow_xRcFaA"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-brand-50/20 hover:border-brand-200 transition-all text-left group active:scale-[0.98]"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm shrink-0">
-                      🌟
-                    </div>
-                    <div className="flex-1 space-y-0.5 min-w-0">
-                      <p className="text-sm font-extrabold text-slate-800">
-                        Pública en Google Maps
-                      </p>
-                      <p className="text-xs text-slate-400 font-bold leading-normal">
-                        Calificanos en Google para ayudarnos a que más gente nos conozca.
-                      </p>
-                    </div>
-                  </a>
-
-                  {/* KSC Internal Button Option */}
                   <button
                     type="button"
                     onClick={() => setSurveyStep('ksc')}
-                    className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-brand-50/20 hover:border-brand-200 transition-all text-left group active:scale-[0.98]"
+                    className="flex items-center gap-4 p-4 rounded-2xl border border-[#e6dfd5] bg-[#faf7f2] hover:bg-[#f5f0e8] transition-all text-left group active:scale-[0.98]"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#26160d] text-[#f5f0e8] flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm shrink-0">
                       💬
                     </div>
                     <div className="flex-1 space-y-0.5 min-w-0">
                       <p className="text-sm font-extrabold text-slate-800">
-                        Privada para KSC
+                        Comentario para Tomás
                       </p>
-                      <p className="text-xs text-slate-400 font-bold leading-normal">
-                        Dejanos tu feedback interno para seguir mejorando el servicio.
+                      <p className="text-xs text-slate-500 font-bold leading-normal">
+                        Dejanos tu feedback para ajustar tus rutinas y objetivos.
                       </p>
                     </div>
                   </button>
@@ -322,7 +300,7 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
               <form onSubmit={handleSubmit} className="flex flex-col gap-5 animate-fade-in">
                 <div className="text-center space-y-1">
                   <h3 className="text-lg font-black text-slate-900 leading-tight">
-                    ¿Qué tan satisfecho estás con tu experiencia en KSC?
+                    ¿Qué tan satisfecho estás con tu entrenamiento con Tomás?
                   </h3>
                   <p className="text-xs font-semibold text-slate-500">
                     Deslizá de izquierda a derecha para calificar
@@ -358,7 +336,7 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                       step="1"
                       value={rating}
                       onChange={(e) => setRating(Number(e.target.value))}
-                      className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 outline-none accent-brand-600 focus:outline-none"
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 outline-none accent-[#26160d] focus:outline-none"
                       style={{
                         background: `linear-gradient(to right, #ef4444 0%, #f59e0b 25%, #eab308 50%, #06b6d4 75%, #10b981 100%)`
                       }}
@@ -376,7 +354,7 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                 {/* Optional Feedback Comment */}
                 <div className="space-y-1">
                   <label htmlFor="feedback-comment" className="text-xs font-bold text-slate-600">
-                    ¿Hay algo que podamos mejorar? (Opcional)
+                    ¿Qué sugerencia o comentario querés hacerle a Tomás? (Opcional)
                   </label>
                   <textarea
                     id="feedback-comment"
@@ -384,7 +362,7 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                     rows={2}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full text-sm rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 outline-none focus:border-brand-500 focus:bg-white transition-all resize-none"
+                    className="w-full text-sm rounded-xl border border-[#e6dfd5] bg-[#faf7f2] px-3.5 py-2.5 outline-none focus:border-[#26160d] focus:bg-white transition-all resize-none"
                   />
                 </div>
 
@@ -392,7 +370,7 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full h-12 rounded-xl bg-brand-600 text-white font-extrabold uppercase tracking-wider text-sm transition hover:bg-brand-700 active:scale-98 shadow-md shadow-brand-500/10 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full h-12 rounded-xl bg-[#26160d] text-[#f5f0e8] font-extrabold uppercase tracking-wider text-sm transition hover:bg-[#3d2b20] active:scale-98 shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -418,9 +396,9 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                   </svg>
                 </div>
                 <div className="space-y-1.5 pb-2">
-                  <h3 className="text-xl font-black text-slate-900">¡Calificación recibida!</h3>
+                  <h3 className="text-xl font-black text-slate-900">¡Opinión enviada!</h3>
                   <p className="text-sm font-bold text-slate-500 max-w-[240px] mx-auto">
-                    Gracias por ayudarnos a mejorar tu experiencia en KSC.
+                    Gracias por ayudarnos a ajustar tu entrenamiento al máximo.
                   </p>
                 </div>
                 {rating >= 4 && (

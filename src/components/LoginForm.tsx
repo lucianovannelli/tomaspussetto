@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
-const STORAGE_KEY = 'ksc_member_id';
+const STORAGE_KEY = 'tp_member_id';
 
 export default function LoginForm() {
   const [memberId, setMemberId] = useState('');

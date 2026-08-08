@@ -2,62 +2,42 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Acceso | KSC Mobile">
-  <main class="relative min-h-dvh w-full overflow-hidden bg-[#f8f9ff] flex items-center justify-center p-6 font-['Plus_Jakarta_Sans']" transition:animate="slide">
+<BaseLayout title="Tomás Pussetto | Fuerza, hábitos y equilibrio">
+  <main class="relative min-h-dvh w-full overflow-hidden bg-[#f5f0e8] flex items-center justify-center p-6 font-['Inter']" transition:animate="slide">
     <!-- Particles Container -->
     <div id="particles-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
 
-    <!-- Dynamic Background Elements (Soft Light Purple) -->
-    <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-brand-500/10 blur-[100px] rounded-full animate-blob"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-brand-400/5 blur-[100px] rounded-full animate-blob animation-delay-2000"></div>
-    <div class="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-brand-600/5 blur-[80px] rounded-full animate-blob animation-delay-4000"></div>
-
-    <!-- Background Grid Overlay (Subtle) -->
-    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/soft-wallpaper.png')] opacity-[0.2] pointer-events-none"></div>
+    <!-- Soft Ambient Lighting -->
+    <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#26160d]/5 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#1c1a17]/5 blur-[120px] rounded-full"></div>
 
     <section class="relative z-10 w-full max-w-md space-y-8">
-      <!-- Logo Area with Entrance Animation -->
-      <div class="flex flex-col items-center space-y-6 animate-reveal">
-        <div class="relative group">
-          <!-- Animated Glow -->
-          <div class="absolute inset-0 bg-brand-500 blur-3xl opacity-20 group-hover:opacity-30 animate-pulse-slow transition-opacity"></div>
-          
-          <!-- Orbiting ring -->
-          <div class="absolute -inset-4 border border-brand-500/10 rounded-[32px] animate-spin-slow"></div>
-          
-          <div class="relative w-28 h-28 shrink-0 aspect-square bg-white rounded-3xl border-8 border-brand-700 flex flex-col items-center justify-center shadow-[0_10px_30px_-5px_rgba(139,92,246,0.2)] transform hover:scale-110 transition-transform duration-500" transition:name="brand-logo">
-            <span class="text-4xl font-black text-brand-700 leading-none tracking-tighter" style="font-family: 'Arial Black', Impact, sans-serif;">KSC</span>
-            <span class="text-[10px] font-black text-brand-700 uppercase tracking-[0.15em] mt-0.5" style="font-family: 'Arial Black', Impact, sans-serif;">Fitness</span>
-          </div>
-        </div>
-        
-        <div class="text-center space-y-2">
-          <div class="flex items-center justify-center gap-3 animate-text-reveal animation-delay-500">
-            <div class="h-[1px] w-8 bg-gradient-to-r from-transparent to-slate-200"></div>
-            <p class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Mendoza 2434</p>
-            <div class="h-[1px] w-8 bg-gradient-to-l from-transparent to-slate-200"></div>
-          </div>
+      <!-- Logo Area with Tomás Pussetto Brand Header -->
+      <div class="flex flex-col items-center space-y-4 animate-reveal text-center">
+        <!-- Logo / Signature Canvas Container -->
+        <div class="relative py-4 px-6 flex flex-col items-center justify-center">
+          <svg viewBox="0 0 380 90" class="w-72 h-auto text-[#26160d]" fill="currentColor" aria-label="Tomás Pussetto Logo">
+            <!-- Handwritten signature style rendering -->
+            <text x="190" y="52" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">Tomás Pussetto</text>
+            <text x="190" y="78" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="12" letter-spacing="1.5" fill="#5e4e43" class="uppercase">Fuerza, hábitos y equilibrio</text>
+          </svg>
         </div>
       </div>
 
-      <!-- Glassmorphism Card (Light Theme) -->
-      <div class="relative overflow-hidden rounded-[38px] border border-white bg-white/60 p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(139,92,246,0.08)] animate-card-reveal">
-        <!-- Inner decorative light -->
-        <div class="absolute -top-24 -left-24 w-48 h-48 bg-brand-500/5 blur-3xl rounded-full"></div>
-        
-        <form id="login-form" class="space-y-8 relative z-10">
-          <div class="space-y-3 animate-fade-in animation-delay-700">
+      <!-- Surface Card -->
+      <div class="relative overflow-hidden rounded-[28px] border border-[#e6dfd5] bg-white p-8 shadow-[0_20px_50px_rgba(38,22,13,0.06)] animate-card-reveal">
+        <form id="login-form" class="space-y-6 relative z-10">
+          <div class="space-y-2.5 animate-fade-in animation-delay-700">
             <div class="flex justify-between items-end px-1">
-              <label for="member-id" class="block text-[11px] font-black uppercase tracking-widest text-slate-400">
-                Identificación de Socio
+              <label for="member-id" class="block text-xs font-bold uppercase tracking-wider text-[#5e4e43]">
+                Acceso de Alumno / DNI
               </label>
-              <span class="text-[10px] font-bold text-brand-500/40">ID Requerido</span>
             </div>
             
             <div class="relative group">
-              <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-300 group-focus-within:text-brand-500 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#5e4e43]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <input
@@ -65,47 +45,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 type="text"
                 inputmode="numeric"
                 pattern="[0-9]*"
-                class="block w-full h-16 pl-14 pr-6 bg-slate-50/50 border border-slate-100 rounded-2xl text-slate-900 font-bold text-xl placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500/30 focus:bg-white transition-all duration-300"
-                placeholder={import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true' ? '999 o cualquier número' : '0000'}
+                class="block w-full h-14 pl-12 pr-4 bg-[#faf7f2] border border-[#e6dfd5] rounded-xl text-[#1c1a17] font-bold text-lg placeholder:text-[#5e4e43]/40 focus:outline-none focus:ring-2 focus:ring-[#26160d]/20 focus:border-[#26160d] focus:bg-white transition-all duration-200"
+                placeholder={import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true' ? '999 o tu DNI' : 'Ingresá tu DNI'}
                 required
               />
             </div>
           </div>
 
-          <p id="login-error" class="hidden text-sm font-bold text-red-500 text-center animate-shake"></p>
+          <p id="login-error" class="hidden text-sm font-bold text-red-600 text-center animate-shake"></p>
 
           <button 
             type="submit" 
-            class="login-holographic-btn animate-fade-in animation-delay-1000"
+            class="login-btn"
           >
-            <!-- Sweep de luz -->
-            <div class="lhb-sweep"></div>
-            <!-- Texto con shimmer -->
-            <span class="lhb-text">Ingresar</span>
+            <span class="btn-text">Ingresar a tu Plan</span>
           </button>
 
           <div id="demo-login-container" class="hidden relative flex flex-col items-center gap-3 pt-2">
             <div class="flex items-center gap-2 w-full animate-fade-in animation-delay-1000">
-              <div class="h-[1px] flex-1 bg-slate-200"></div>
-              <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">O probar el demo</span>
-              <div class="h-[1px] flex-1 bg-slate-200"></div>
+              <div class="h-[1px] flex-1 bg-[#e6dfd5]"></div>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-[#5e4e43]/60">Ver Demostración</span>
+              <div class="h-[1px] flex-1 bg-[#e6dfd5]"></div>
             </div>
             <button 
               id="demo-login-btn"
               type="button"
-              class="group relative w-full h-14 overflow-hidden rounded-2xl border-2 border-dashed border-brand-300 hover:border-brand-500 bg-brand-50/50 hover:bg-brand-50 text-brand-700 font-extrabold text-base transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 animate-fade-in animation-delay-1200 cursor-pointer"
+              class="group relative w-full h-12 overflow-hidden rounded-xl border border-dashed border-[#26160d]/30 bg-[#faf7f2] hover:bg-[#f5f0e8] text-[#26160d] font-bold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#26160d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Acceso Socio Demo (Lautaro)
+              Acceso Alumno Demo (Lautaro)
             </button>
           </div>
         </form>
       </div>
 
       <footer class="text-center animate-fade-in animation-delay-1200">
-        <p class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Powered by KSC Ecosystem</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[#5e4e43]/70">Tomás Pussetto — Coach Personal</p>
       </footer>
     </section>
   </main>
@@ -368,8 +345,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     const isDemo = localStorage.getItem('ksc_demo_mode') === 'true' || import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true';
 
-    const storageKey = 'ksc_member_id';
-    const existingId = localStorage.getItem(storageKey);
+    const storageKey = 'tp_member_id';
+    const existingId = localStorage.getItem(storageKey) || localStorage.getItem('ksc_member_id');
     if (existingId && /^\d+$/.test(existingId.trim())) {
       navigate('/dashboard', { history: 'replace' });
       return;

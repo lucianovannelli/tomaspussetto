@@ -4,12 +4,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        espresso: '#26160d',
+        cream: '#f5f0e8',
+        charcoal: '#1c1a17',
         brand: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          700: '#6d28d9'
+          50: '#faf7f2',
+          100: '#f5f0e8',
+          200: '#e6dfd5',
+          300: '#d5c7b5',
+          400: '#8c7a6b',
+          500: '#5e4e43',
+          600: '#3d2b20',
+          700: '#26160d',
+          800: '#1c1a17',
+          900: '#12100e'
         }
       },
       boxShadow: {

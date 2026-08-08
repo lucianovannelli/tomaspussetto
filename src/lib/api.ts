@@ -43,19 +43,19 @@ function fallbackDashboard(memberId: string): DashboardData {
     routines: [
       {
         id: 'fuerza-1',
-        name: isDemoMode() ? 'Día 1 - Fuerza Torso (Empuje/Tracción)' : `KSC Fuerza - Socio ${memberId}`,
+        name: isDemoMode() ? 'Día 1 - Fuerza Torso (Empuje/Tracción)' : `Plan Fuerza - Alumno ${memberId}`,
         date: new Date().toISOString().split('T')[0],
         completed: completedList.includes('fuerza-1')
       },
       {
         id: 'piernas-2',
-        name: isDemoMode() ? 'Día 2 - Piernas & Core (Foco Cadera)' : 'KSC Piernas y Core',
+        name: isDemoMode() ? 'Día 2 - Piernas & Core (Foco Cadera)' : 'Plan Piernas y Core',
         date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         completed: completedList.includes('piernas-2')
       },
       {
         id: 'cardio-3',
-        name: isDemoMode() ? 'Día 3 - Acondicionamiento Metabólico (AMRAP)' : 'KSC Cardio & Metcon',
+        name: isDemoMode() ? 'Día 3 - Acondicionamiento Metabólico (AMRAP)' : 'Plan Acondicionamiento',
         date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         completed: completedList.includes('cardio-3')
       }
@@ -371,7 +371,7 @@ export async function fetchMember(memberId: string): Promise<Member> {
     return {
       firstName: 'Lautaro',
       lastName: 'Demo',
-      email: 'lautaro.demo@kscfitness.com',
+      email: 'lautaro.demo@tomaspussetto.com',
       phone: '3416554433',
       birthDate: '1995-08-25',
       joinDate: '2026-05-04',

@@ -499,10 +499,10 @@ export default function RoutineDetailView({ routineId }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2">
             <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#a78bfa', flexShrink: 0 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
                   <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
                 </svg>
-                <span className="badge-text">KSC Mobile</span>
+                <span className="badge-text">Tomás Pussetto</span>
               </span>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex flex-wrap items-center gap-2">
               {routine.name}

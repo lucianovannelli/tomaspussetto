@@ -4,7 +4,8 @@ import type { LastPaymentSummary, RoutineSummary, Member, Payment } from '../lib
 import { navigate } from 'astro:transitions/client';
 import SatisfactionSensor from './SatisfactionSensor';
 
-const STORAGE_KEY = 'ksc_member_id';
+const STORAGE_KEY = 'tp_member_id';
+const FALLBACK_STORAGE_KEY = 'ksc_member_id';
 
 function formatDate(dateValue: string) {
   try {
@@ -97,7 +98,7 @@ export default function DashboardView() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const memberIdFromQuery = url.searchParams.get('member_id');
-    const storedMemberId = localStorage.getItem(STORAGE_KEY);
+    const storedMemberId = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(FALLBACK_STORAGE_KEY);
     const resolvedMemberId = (memberIdFromQuery || storedMemberId || '').trim();
 
     if (!resolvedMemberId || !/^\d+$/.test(resolvedMemberId)) {
@@ -282,10 +283,10 @@ export default function DashboardView() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#a78bfa', flexShrink: 0 }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
                     <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
                   </svg>
-                  <span className="badge-text">KSC Mobile</span>
+                  <span className="badge-text">Tomás Pussetto</span>
                 </span>
               {presence.training_now > 0 && (() => {
                 const n = presence.training_now;
@@ -308,9 +309,9 @@ export default function DashboardView() {
               })()}
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-              Hola, {member ? `${member.firstName} ${member.lastName}` : 'cliente KSC'}
+              Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumno'}
               {isDemoMode() && (
-                <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-brand-700">Demo</span>
+                <span className="inline-flex items-center rounded-full bg-[#26160d]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#26160d]">Demo</span>
               )}
             </h1>
           </div>
@@ -599,25 +600,17 @@ export default function DashboardView() {
                 )}
               </section>
 
-              {/* Tarjeta de Reseña de Google Maps */}
-              <section className="surface-card space-y-3 border border-brand-100 bg-brand-50/10">
+              {/* Tarjeta de Coach y Feedback */}
+              <section className="surface-card space-y-3 border border-[#e6dfd5] bg-[#faf7f2]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-lg shadow-sm shrink-0">
-                    🌟
+                  <div className="w-10 h-10 rounded-xl bg-[#26160d] text-[#f5f0e8] flex items-center justify-center text-lg shadow-sm shrink-0">
+                    💪
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-brand-700">¿Te gusta entrenar en KSC?</h3>
-                    <p className="text-xs text-slate-500 font-medium">Dejanos tu opinión en Google Maps para ayudarnos a crecer.</p>
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#26160d]">Entrenamiento con Tomás</h3>
+                    <p className="text-xs text-[#5e4e43] font-medium">Fuerza, hábitos y equilibrio. Diseñado especialmente para vos.</p>
                   </div>
                 </div>
-                <a
-                  href="https://search.google.com/local/writereview?placeid=ChIJ24SC_Wmrt5UR1_Ow_xRcFaA"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="touch-btn w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold"
-                >
-                  Calificar en Google Maps
-                </a>
               </section>
             </>
           )}
@@ -625,7 +618,7 @@ export default function DashboardView() {
           {lastPayment ? (
             <section className="surface-card space-y-3">
               <div className="space-y-1">
-                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Ultimo pago</p>
+                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#26160d]">Último pago de cuota</p>
                 <h2 className="text-xl font-extrabold text-slate-900">{formattedLastPaymentAmount}</h2>
               </div>
               <p className="text-base font-medium text-slate-700">Fecha: {formattedLastPaymentDate}</p>
@@ -636,18 +629,18 @@ export default function DashboardView() {
                     className="touch-btn w-full"
                     onClick={() => setShowPaymentInfo(v => !v)}
                   >
-                    {showPaymentInfo ? 'Cerrar' : 'Pagar cuota'}
+                    {showPaymentInfo ? 'Cerrar' : 'Pagar cuota / Plan'}
                   </button>
                   {showPaymentInfo && (
-                    <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 space-y-3">
-                      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-700">Datos de pago</p>
+                    <div className="rounded-xl bg-[#faf7f2] border border-[#e6dfd5] p-4 space-y-3">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#26160d]">Datos de pago</p>
                       <div className="space-y-1.5">
                         <p className="text-sm font-medium text-slate-700">Monto: <span className="font-extrabold text-slate-900">{formattedLastPaymentAmount}</span></p>
-                        <p className="text-sm font-medium text-slate-700">Alias: <span className="font-extrabold text-slate-900 select-all">Ksc2023</span></p>
+                        <p className="text-sm font-medium text-slate-700">Alias: <span className="font-extrabold text-slate-900 select-all">tomas.pussetto</span></p>
                         <p className="text-sm font-medium text-slate-700">Enviar comprobante al: <span className="font-extrabold text-slate-900">3417559988</span></p>
                       </div>
                       <a
-                        href={`https://wa.me/543417559988?text=Hola%2C%20te%20env%C3%ADo%20el%20comprobante%20de%20pago%20de%20${encodeURIComponent(formattedLastPaymentAmount)}`}
+                        href={`https://wa.me/543417559988?text=Hola%20Tom%C3%A1s%2C%20te%20env%C3%ADo%20el%20comprobante%20de%20pago%20de%20${encodeURIComponent(formattedLastPaymentAmount)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="touch-btn w-full flex items-center justify-center"
