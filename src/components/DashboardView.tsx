@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchDashboard, fetchMember, updateMember, fetchPresenceStats, isDemoMode, fetchMemberPayments, isBasicMode, setBasicMode } from '../lib/api';
+import { fetchDashboard, fetchMember, updateMember, isDemoMode, fetchMemberPayments, isBasicMode, setBasicMode } from '../lib/api';
 import type { LastPaymentSummary, RoutineSummary, Member, Payment } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 import SatisfactionSensor from './SatisfactionSensor';
@@ -64,12 +64,6 @@ export default function DashboardView() {
   const [routines, setRoutines] = useState<RoutineSummary[]>([]);
   const [lastPayment, setLastPayment] = useState<LastPaymentSummary | null>(null);
   const [member, setMember] = useState<Member | null>(null);
-  const [presence, setPresence] = useState<{
-    training_now: number;
-    training_now_names?: string[];
-    training_now_details?: Array<{ id: string | null; name: string; timestamp?: string }>;
-  }>({ training_now: 0 });
-  const [showPresenceModal, setShowPresenceModal] = useState(false);
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [showPaymentsModal, setShowPaymentsModal] = useState(false);
   const [loadingPayments, setLoadingPayments] = useState(false);
@@ -111,14 +105,12 @@ export default function DashboardView() {
 
     Promise.all([
       fetchDashboard(resolvedMemberId),
-      fetchMember(resolvedMemberId),
-      fetchPresenceStats()
+      fetchMember(resolvedMemberId)
     ])
-      .then(([dashboardData, memberData, presenceData]) => {
+      .then(([dashboardData, memberData]) => {
         setRoutines(dashboardData.routines);
         setLastPayment(dashboardData.lastPayment);
         setMember(memberData);
-        setPresence(presenceData);
         setProfileForm({
           firstName: memberData.firstName || '',
           lastName: memberData.lastName || '',
@@ -150,26 +142,10 @@ export default function DashboardView() {
       });
   }, []);
 
-  // Poll presence stats every 30 seconds
-  useEffect(() => {
-    if (!memberId) return;
-
-    const interval = setInterval(() => {
-      fetchPresenceStats()
-        .then((presenceData) => {
-          setPresence(presenceData);
-        })
-        .catch((err) => console.error('Error fetching presence:', err));
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [memberId]);
-
-  // Refresh presence and dashboard on active tab switch
+  // Refresh dashboard on active tab switch
   useEffect(() => {
     if (!memberId || loading) return;
     
-    fetchPresenceStats().then(setPresence).catch(() => {});
     fetchDashboard(memberId)
       .then((dashboardData) => {
         setRoutines(dashboardData.routines);
@@ -178,12 +154,11 @@ export default function DashboardView() {
       .catch(() => {});
   }, [activeTab, memberId, loading]);
 
-  // Refresh presence and dashboard on window focus / visibility change
+  // Refresh dashboard on window focus / visibility change
   useEffect(() => {
     if (!memberId || loading) return;
 
     const handleFocus = () => {
-      fetchPresenceStats().then(setPresence).catch(() => {});
       fetchDashboard(memberId)
         .then((dashboardData) => {
           setRoutines(dashboardData.routines);
@@ -283,30 +258,11 @@ export default function DashboardView() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
-                    <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
-                  </svg>
-                  <span className="badge-text">Tomás Pussetto</span>
-                </span>
-              {presence.training_now > 0 && (() => {
-                const n = presence.training_now;
-                const colors = n >= 20
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : n >= 13
-                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
-                const dot = n >= 20 ? 'bg-red-500' : n >= 13 ? 'bg-amber-500' : 'bg-emerald-500';
-                return (
-                  <button
-                    type="button"
-                    onClick={() => setShowPresenceModal(true)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider active:scale-95 transition cursor-pointer ${colors}`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${dot}`}></span>
-                    {n} {n === 1 ? 'persona' : 'personas'}
-                  </button>
-                );
-              })()}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
+                  <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
+                </svg>
+                <span className="badge-text">Tomás Pussetto</span>
+              </span>
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
               Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumno'}
@@ -653,74 +609,6 @@ export default function DashboardView() {
               )}
             </section>
           ) : null}
-        </div>
-      )}
-
-      {showPresenceModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowPresenceModal(false)}
-          />
-          
-          {/* Bottom Sheet Card */}
-          <div className="relative z-10 w-full max-w-md bg-white rounded-t-[32px] border-t border-slate-200 shadow-2xl p-6 space-y-6 animate-slide-up max-h-[70vh] flex flex-col">
-            {/* Grabber indicator for bottom sheet */}
-            <div className="mx-auto w-12 h-1.5 bg-slate-200 rounded-full cursor-pointer" onClick={() => setShowPresenceModal(false)} />
-            
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900">Entrenando Ahora</h3>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Personas en el gimnasio</p>
-              </div>
-              <button 
-                type="button" 
-                onClick={() => setShowPresenceModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-900 active:scale-90 transition cursor-pointer"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-3 no-scrollbar pr-1">
-              {presence.training_now_details && presence.training_now_details.length > 0 ? (
-                presence.training_now_details.map((person, idx) => {
-                  const initials = person.name ? person.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase() : '??';
-                  return (
-                    <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl animate-fade-in">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs font-black">
-                          {initials}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-900">{person.name}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Socio Activo</span>
-                        </div>
-                      </div>
-                      {person.timestamp && (
-                        <span className="text-xs font-black text-slate-500 bg-white border border-slate-100 px-2.5 py-1 rounded-lg">
-                          {(() => {
-                            try {
-                              const date = new Date(person.timestamp.includes('T') ? person.timestamp : person.timestamp.replace(' ', 'T'));
-                              return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hs';
-                            } catch {
-                              return '';
-                            }
-                          })()}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm font-medium text-slate-500 text-center py-6">No hay personas registradas entrenando ahora.</p>
-              )}
-            </div>
-          </div>
         </div>
       )}
 

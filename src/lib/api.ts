@@ -456,29 +456,6 @@ export async function updateMemberBirthDate(memberId: string, birthDate: string)
   return response.ok;
 }
 
-export async function fetchPresenceStats() {
-  if (isDemoMode()) {
-    return {
-      training_now: 3,
-      training_now_names: ['María Becerra', 'Emiliano Martínez', 'Lionel Messi'],
-      training_now_details: [
-        { id: '100', name: 'María Becerra', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
-        { id: '101', name: 'Emiliano Martínez', timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString() },
-        { id: '102', name: 'Lionel Messi', timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString() }
-      ]
-    };
-  }
-  try {
-    // Reutilizamos la base pero para el endpoint de presencia
-    const base = API_BASE.replace('/api/mobile', '/api/presence');
-    const response = await fetch(`${base}/stats`);
-    if (!response.ok) return { training_now: 0 };
-    return await response.json();
-  } catch {
-    return { training_now: 0 };
-  }
-}
-
 export async function submitFeedback(memberId: string, rating: number, comment?: string): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE}/feedback`, {
@@ -523,25 +500,6 @@ export async function completeRoutine(routineId: string): Promise<boolean> {
     return response.ok;
   } catch (error) {
     console.error('Failed to complete routine via API', error);
-    return false;
-  }
-}
-
-export async function completeDay(routineId: string): Promise<boolean> {
-  if (isDemoMode()) {
-    console.log('Demo Mode: Simulating day completion', { routineId });
-    return new Promise((resolve) => setTimeout(() => resolve(true), 300));
-  }
-  try {
-    const response = await fetch(`${API_BASE}/routine/${encodeURIComponent(routineId)}/complete-day`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to complete day via API', error);
     return false;
   }
 }

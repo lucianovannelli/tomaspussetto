@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchRoutine, saveExerciseWeight, completeRoutine, completeDay, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode } from '../lib/api';
+import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode } from '../lib/api';
 import type { RoutineDetail, RoutineBlock } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
@@ -174,7 +174,6 @@ export default function RoutineDetailView({ routineId }: Props) {
     const label = tabObj ? tabObj.label : 'Día';
     
     if (!completedDays.includes(tabId)) {
-      void completeDay(routineId);
       const newCompleted = [...completedDays, tabId];
 
       // Increment completed sessions count for this day/tab
