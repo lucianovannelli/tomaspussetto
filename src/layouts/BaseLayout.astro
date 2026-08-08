@@ -1,0 +1,73 @@
+---
+import { pwaInfo } from 'virtual:pwa-info';
+import { ViewTransitions } from 'astro:transitions';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'KSC Mobile app para clientes' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="application-name" content="KSC Mobile" />
+    
+    <!-- iOS PWA Standalone Mode Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="KSC Mobile" />
+
+    <meta name="theme-color" content="#8b5cf6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+    <ViewTransitions />
+  </head>
+  <body>
+    <div id="demo-banner" class="hidden fixed top-[calc(env(safe-area-inset-top)+0.5rem)] left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-violet-600 to-brand-600 text-white text-[10px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full shadow-xl border border-white/20 flex items-center gap-1.5 pointer-events-none select-none">
+      <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+      Entorno Demo
+    </div>
+    <slot />
+    <script>
+      import { registerSW } from 'virtual:pwa-register';
+      registerSW({ immediate: true });
+
+      function updateDemoBanner() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('demo') === 'true') {
+          localStorage.setItem('ksc_demo_mode', 'true');
+        }
+        
+        const isDemo = localStorage.getItem('ksc_demo_mode') === 'true' || import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true';
+        const banner = document.getElementById('demo-banner');
+        if (banner) {
+          if (isDemo) {
+            banner.classList.remove('hidden');
+          } else {
+            banner.classList.add('hidden');
+          }
+        }
+      }
+
+      // Run on load and page transition
+      document.addEventListener('astro:page-load', updateDemoBanner);
+    </script>
+  </body>
+</html>
+

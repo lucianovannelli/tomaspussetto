@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DashboardView from '../components/DashboardView';
+---
+
+<BaseLayout title="Dashboard | KSC Mobile">
+  <main class="app-shell" transition:animate="slide">
+    <DashboardView client:load />
+  </main>
+</BaseLayout>
