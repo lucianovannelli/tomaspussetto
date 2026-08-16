@@ -1,6 +1,6 @@
 import type { DashboardData, RoutineDetail, Member, Payment } from './types';
 
-const API_BASE = import.meta.env.PUBLIC_KSC_API_BASE ?? 'https://ksc.lucianovannelli.workers.dev/api/mobile';
+const API_BASE = import.meta.env.PUBLIC_KSC_API_BASE ?? 'https://pusse-server.lucianovannelli.workers.dev/api/mobile';
 export function isDemoMode(): boolean {
   if (typeof window === 'undefined') {
     return import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true';
