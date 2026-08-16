@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode } from '../lib/api';
+import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl } from '../lib/api';
 import type { RoutineDetail, RoutineBlock } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
@@ -11,6 +11,7 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [routine, setRoutine] = useState<RoutineDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
   const [weights, setWeights] = useState<Record<string, string[]>>({});
   const [roundInput, setRoundInput] = useState('');
   const [activeWeightEditor, setActiveWeightEditor] = useState<{
@@ -610,7 +611,21 @@ export default function RoutineDetailView({ routineId }: Props) {
                   <li key={exercise.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex flex-col gap-1 flex-1">
-                        <h3 className="text-xl font-extrabold text-slate-900">{exercise.name}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xl font-extrabold text-slate-900">{exercise.name}</h3>
+                          {exercise.videoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveVideo({ url: exercise.videoUrl!, title: exercise.name })}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-100 hover:bg-brand-200 border border-brand-300 text-brand-800 text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-sm"
+                            >
+                              <svg className="w-3.5 h-3.5 text-brand-700 fill-current" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                              <span>Ver Técnica</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1 bg-slate-100/60 p-0.5 rounded-xl border border-slate-200/50">
@@ -1143,6 +1158,54 @@ export default function RoutineDetailView({ routineId }: Props) {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
                 ¡Seguí así!
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reproductor de Video In-App para Ejercicios */}
+      {activeVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+            onClick={() => setActiveVideo(null)}
+          />
+          <div className="relative w-full max-w-2xl bg-slate-900 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-slide-up flex flex-col space-y-4 p-5 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <h3 className="text-lg font-extrabold text-white truncate max-w-[260px] sm:max-w-md">
+                  {activeVideo.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveVideo(null)}
+                className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition active:scale-90 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-inner">
+              <iframe
+                src={getYouTubeEmbedUrl(activeVideo.url) || ''}
+                title={activeVideo.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              ></iframe>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+              <span>Explicación técnica del ejercicio</span>
+              <button
+                type="button"
+                onClick={() => setActiveVideo(null)}
+                className="px-4 py-1.5 rounded-full bg-slate-800 text-white font-bold hover:bg-slate-700 cursor-pointer"
+              >
+                Cerrar Video
+              </button>
             </div>
           </div>
         </div>

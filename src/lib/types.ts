@@ -23,6 +23,7 @@ export interface Exercise {
   weight?: string;
   block?: string;
   blockType?: string;
+  videoUrl?: string;
   likeStatus?: 'like' | 'dislike' | null;
 }
 

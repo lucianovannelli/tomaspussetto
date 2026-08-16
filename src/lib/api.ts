@@ -96,14 +96,16 @@ function fallbackRoutine(id: string): RoutineDetail {
               name: 'Cat-Camel (Gato/Bueno)',
               sets: 2,
               reps: '10',
-              weight: ''
+              weight: '',
+              videoUrl: 'https://www.youtube.com/watch?v=w_UK7lRz1Zk'
             },
             {
               id: 'w_band_pull',
               name: 'Band Pull-Apart (Aperturas con banda)',
               sets: 2,
               reps: '15',
-              weight: ''
+              weight: '',
+              videoUrl: 'https://www.youtube.com/watch?v=Fo_o5sPZzG4'
             }
           ]
         },
@@ -118,14 +120,16 @@ function fallbackRoutine(id: string): RoutineDetail {
               name: 'Press de Banca Plano con Barra',
               sets: 4,
               reps: '8, 8, 6, 6',
-              weight: '50, 52.5, 55, 55'
+              weight: '50, 52.5, 55, 55',
+              videoUrl: 'https://www.youtube.com/watch?v=rT7DgCr-3pg'
             },
             {
               id: 'pull_up',
               name: 'Dominadas Pronas (Asistidas)',
               sets: 4,
               reps: '8, 8, 8, 8',
-              weight: '15, 15, 10, 10'
+              weight: '15, 15, 10, 10',
+              videoUrl: 'https://www.youtube.com/watch?v=eGo4IYlbE5g'
             }
           ]
         },
@@ -140,14 +144,16 @@ function fallbackRoutine(id: string): RoutineDetail {
               name: 'Press Militar sentado con Mancuernas',
               sets: 3,
               reps: '10, 10, 10',
-              weight: '12.5, 12.5, 15'
+              weight: '12.5, 12.5, 15',
+              videoUrl: 'https://www.youtube.com/watch?v=qEwKCR5JCog'
             },
             {
               id: 'db_row',
               name: 'Serrucho / Remo unilateral con Mancuerna',
               sets: 3,
               reps: '12, 10, 10',
-              weight: '15, 17.5, 17.5'
+              weight: '15, 17.5, 17.5',
+              videoUrl: 'https://www.youtube.com/watch?v=pYcpY20QaE8'
             }
           ]
         }
@@ -576,6 +582,16 @@ export async function fetchMemberPayments(memberId: string): Promise<Payment[]> 
     }
     throw error;
   }
+}
+
+export function getYouTubeEmbedUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2].length === 11) {
+    return `https://www.youtube-nocookie.com/embed/${match[2]}?autoplay=1&modestbranding=1&rel=0`;
+  }
+  return url;
 }
 
 
