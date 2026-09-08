@@ -564,7 +564,7 @@ export default function DashboardView() {
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#26160d]">Entrenamiento con Tomás</h3>
-                    <p className="text-xs text-[#5e4e43] font-medium">Fuerza, hábitos y equilibrio. Diseñado especialmente para vos.</p>
+                    <p className="text-xs text-[#5e4e43] font-medium">Método ENDS. Diseñado especialmente para vos.</p>
                   </div>
                 </div>
               </section>

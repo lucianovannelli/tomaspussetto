@@ -269,8 +269,8 @@ export default function SatisfactionSensor({ memberId }: SatisfactionSensorProps
                   <h3 className="text-lg font-black text-slate-900 leading-tight">
                     ¿Cómo viene tu proceso de entrenamiento?
                   </h3>
-                  <p className="text-xs font-semibold text-slate-500">
-                    Fuerza, hábitos y equilibrio
+                  <p className="text-[10px] text-[#5e4e43] font-bold uppercase tracking-widest mt-0.5">
+                    Método ENDS
                   </p>
                 </div>
 
