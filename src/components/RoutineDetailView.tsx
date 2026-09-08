@@ -12,6 +12,13 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
+  const [isVideoVertical, setIsVideoVertical] = useState(true);
+
+  const handleOpenVideo = (url: string, title: string) => {
+    const isExplicitHorizontal = url.includes('watch?v=') && !url.includes('shorts');
+    setIsVideoVertical(!isExplicitHorizontal);
+    setActiveVideo({ url, title });
+  };
   const [weights, setWeights] = useState<Record<string, string[]>>({});
   const [roundInput, setRoundInput] = useState('');
   const [activeWeightEditor, setActiveWeightEditor] = useState<{
@@ -616,7 +623,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                           {exercise.videoUrl && (
                             <button
                               type="button"
-                              onClick={() => setActiveVideo({ url: exercise.videoUrl!, title: exercise.name })}
+                              onClick={() => handleOpenVideo(exercise.videoUrl!, exercise.name)}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-100 hover:bg-brand-200 border border-brand-300 text-brand-800 text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-sm"
                             >
                               <svg className="w-3.5 h-3.5 text-brand-700 fill-current" viewBox="0 0 24 24">
@@ -1163,31 +1170,41 @@ export default function RoutineDetailView({ routineId }: Props) {
         </div>
       )}
 
-      {/* Reproductor de Video In-App para Ejercicios */}
+      {/* Reproductor de Video In-App para Ejercicios (Adaptado para Shorts / Vertical) */}
       {activeVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
           <div
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+            className="absolute inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity"
             onClick={() => setActiveVideo(null)}
           />
-          <div className="relative w-full max-w-2xl bg-slate-900 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-slide-up flex flex-col space-y-4 p-5 z-10">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <h3 className="text-lg font-extrabold text-white truncate max-w-[260px] sm:max-w-md">
+          <div className={`relative w-full ${isVideoVertical ? 'max-w-[360px] sm:max-w-[400px]' : 'max-w-2xl'} bg-slate-900 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-slide-up flex flex-col space-y-3.5 p-4 sm:p-5 z-10 my-auto transition-all duration-300`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                <h3 className="text-base sm:text-lg font-extrabold text-white truncate">
                   {activeVideo.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveVideo(null)}
-                className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition active:scale-90 cursor-pointer"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsVideoVertical(!isVideoVertical)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-[10px] font-extrabold text-slate-300 border border-slate-700 transition active:scale-95 cursor-pointer"
+                  title="Cambiar formato Vertical / Horizontal"
+                >
+                  {isVideoVertical ? '📱 Shorts (9:16)' : '🖥️ 16:9'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveVideo(null)}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition active:scale-90 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-inner">
+            <div className={`relative w-full ${isVideoVertical ? 'aspect-[9/16] max-h-[68vh]' : 'aspect-video'} rounded-2xl overflow-hidden bg-black shadow-inner flex items-center justify-center mx-auto transition-all duration-300`}>
               <iframe
                 src={getYouTubeEmbedUrl(activeVideo.url) || ''}
                 title={activeVideo.title}
@@ -1197,12 +1214,12 @@ export default function RoutineDetailView({ routineId }: Props) {
               ></iframe>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-              <span>Explicación técnica del ejercicio</span>
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+              <span className="text-[11px] text-slate-400 truncate">Video de técnica y ejecución</span>
               <button
                 type="button"
                 onClick={() => setActiveVideo(null)}
-                className="px-4 py-1.5 rounded-full bg-slate-800 text-white font-bold hover:bg-slate-700 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition active:scale-95"
               >
                 Cerrar Video
               </button>

@@ -43,7 +43,7 @@ function fallbackDashboard(memberId: string): DashboardData {
     routines: [
       {
         id: 'fuerza-1',
-        name: isDemoMode() ? 'Día 1 - Fuerza Torso (Empuje/Tracción)' : `Plan Fuerza - Alumno ${memberId}`,
+        name: isDemoMode() ? 'Día 1 - Fuerza Torso (Empuje/Tracción)' : `Plan Fuerza - Alumna ${memberId}`,
         date: new Date().toISOString().split('T')[0],
         completed: completedList.includes('fuerza-1')
       },
@@ -388,16 +388,16 @@ export async function fetchMember(memberId: string): Promise<Member> {
       fitnessLevel: 'Intermedio',
       fitnessGoal: 'Fuerza e Hipertrofia',
       referralSource: 'Instagram',
-      notes: 'Socio de demostración para pruebas visuales.'
+      notes: 'Socia de demostración para pruebas visuales.'
     };
   }
   try {
     const response = await fetch(`${API_BASE}/member?id=${encodeURIComponent(memberId)}`);
-    if (!response.ok) throw new Error('No se pudo cargar la información del socio.');
+    if (!response.ok) throw new Error('No se pudo cargar la información de la socia.');
     return (await response.json()) as Member;
   } catch {
     return {
-      firstName: 'Socio',
+      firstName: 'Socia',
       lastName: memberId,
       email: '',
       phone: '',

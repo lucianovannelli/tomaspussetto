@@ -30,7 +30,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <div class="space-y-2.5 animate-fade-in animation-delay-700">
             <div class="flex justify-between items-end px-1">
               <label for="member-id" class="block text-xs font-bold uppercase tracking-wider text-[#5e4e43]">
-                Acceso de Alumno / DNI
+                ID Socia
               </label>
             </div>
             
@@ -46,7 +46,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 inputmode="numeric"
                 pattern="[0-9]*"
                 class="block w-full h-14 pl-12 pr-4 bg-[#faf7f2] border border-[#e6dfd5] rounded-xl text-[#1c1a17] font-bold text-lg placeholder:text-[#5e4e43]/40 focus:outline-none focus:ring-2 focus:ring-[#26160d]/20 focus:border-[#26160d] focus:bg-white transition-all duration-200"
-                placeholder={import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true' ? '999 o tu DNI' : 'Ingresá tu DNI'}
+                placeholder={import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true' ? '999 o tu ID Socia' : 'Ingresá tu ID de Socia'}
                 required
               />
             </div>
@@ -75,7 +75,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#26160d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Acceso Alumno Demo (Lautaro)
+              Acceso Alumna Demo (Natalia)
             </button>
           </div>
         </form>
@@ -377,7 +377,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         event.preventDefault();
         const memberId = input.value.trim();
         if (!/^\d+$/.test(memberId)) {
-          error.textContent = 'ID de socio inválido.';
+          error.textContent = 'ID de socia inválido.';
           error.classList.remove('hidden');
           error.classList.add('animate-shake');
           setTimeout(() => error.classList.remove('animate-shake'), 400);

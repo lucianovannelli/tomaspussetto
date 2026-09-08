@@ -265,7 +265,7 @@ export default function DashboardView() {
               </span>
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-              Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumno'}
+              Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumna'}
               {isDemoMode() && (
                 <span className="inline-flex items-center rounded-full bg-[#26160d]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#26160d]">Demo</span>
               )}
@@ -508,7 +508,7 @@ export default function DashboardView() {
                 ) : (
                   <>
                       <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
-                        <p><strong>ID de socio:</strong> {memberId}</p>
+                        <p><strong>ID de socia:</strong> {memberId}</p>
                         <p><strong>Días entrenados:</strong> {member.completedDays ?? 0}</p>
                         <p><strong>Email:</strong> {member.email || '—'}</p>
                         <p><strong>Teléfono:</strong> {member.phone || '—'}</p>

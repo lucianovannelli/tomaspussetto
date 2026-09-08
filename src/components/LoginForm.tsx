@@ -26,7 +26,7 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit} className="surface-card flex flex-col gap-4" aria-label="Formulario de acceso">
       <div className="space-y-1">
         <label htmlFor="member-id" className="block text-base font-semibold text-slate-900">
-          ID de socio
+          ID Socia
         </label>
         <input
           id="member-id"
