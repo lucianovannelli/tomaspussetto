@@ -25,6 +25,7 @@ export interface Exercise {
   blockType?: string;
   videoUrl?: string;
   likeStatus?: 'like' | 'dislike' | null;
+  notes?: string;
 }
 
 export interface RoutineBlock {

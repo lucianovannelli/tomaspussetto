@@ -34,6 +34,13 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [activeTabId, setActiveTabId] = useState('');
   const [selectedRoundIndex, setSelectedRoundIndex] = useState<number | null>(null);
   
+  // Exercise Notes states
+  const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
+  const [activeNoteEditor, setActiveNoteEditor] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
+  const [currentNoteInput, setCurrentNoteInput] = useState('');
+  const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   // Completion states
   const [isCompletedState, setIsCompletedState] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -111,6 +118,18 @@ export default function RoutineDetailView({ routineId }: Props) {
         setRoutine(data);
         setIsCompletedState(data?.completed || false);
         const initialWeights: Record<string, string[]> = {};
+        const initialNotes: Record<string, string> = {};
+
+        // Load persisted notes from localStorage
+        try {
+          const storedNotes = localStorage.getItem(`tp_routine_notes_${routineId}`);
+          if (storedNotes) {
+            Object.assign(initialNotes, JSON.parse(storedNotes));
+          }
+        } catch (e) {
+          console.error('Error loading notes from localStorage', e);
+        }
+
         (data?.blocks || []).forEach((block) => {
           (block?.exercises || []).forEach((exercise) => {
             const setsCount = getExerciseRoundsCount(block.rounds, exercise.sets || 1);
@@ -118,9 +137,14 @@ export default function RoutineDetailView({ routineId }: Props) {
             const existingWeights = (exercise.weight || '').split(',').map((w) => w.trim());
             const finalSetsCount = Math.max(setsCount, exerciseSets, existingWeights.length);
             initialWeights[exercise.id] = Array.from({ length: finalSetsCount }, (_, i) => existingWeights[i] || '');
+
+            if (exercise.notes && !initialNotes[exercise.id]) {
+              initialNotes[exercise.id] = exercise.notes;
+            }
           });
         });
         setWeights(initialWeights);
+        setExerciseNotes(initialNotes);
       })
       .catch(() => {
         setError('No se pudo cargar la rutina.');
@@ -129,6 +153,24 @@ export default function RoutineDetailView({ routineId }: Props) {
         setLoading(false);
       });
   }, [routineId]);
+
+  const saveExerciseNote = (exerciseId: string, noteText: string) => {
+    const trimmed = noteText.trim();
+    const updated = { ...exerciseNotes };
+    if (trimmed) {
+      updated[exerciseId] = trimmed;
+    } else {
+      delete updated[exerciseId];
+    }
+    setExerciseNotes(updated);
+    try {
+      localStorage.setItem(`tp_routine_notes_${routineId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving notes to localStorage', e);
+    }
+    setNoteSavedFeedback(true);
+    setTimeout(() => setNoteSavedFeedback(false), 2000);
+  };
 
   const dayTabs = useMemo(() => {
     if (!routine) return [];
@@ -506,37 +548,51 @@ export default function RoutineDetailView({ routineId }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2">
             <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
-                  <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
-                </svg>
-                <span className="badge-text">Tomás Pussetto</span>
-              </span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
+                <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
+              </svg>
+              <span className="badge-text">Tomás Pussetto</span>
+            </span>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex flex-wrap items-center gap-2">
               {routine.name}
               {isDemoMode() && (
                 <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-brand-700">Demo</span>
               )}
               {isCompletedState && (
-                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Terminada ✓</span>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 border border-emerald-200">Terminada ✓</span>
               )}
             </h1>
-            <p className="text-base font-medium text-slate-700">Fecha: {routine.date}</p>
+            <p className="text-xs font-bold text-[#8c7a6b] bg-[#faf7f2] border border-[#e6dfd5]/80 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 w-fit">
+              <svg className="w-3.5 h-3.5 text-[#8c7a6b]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <span>Fecha: {routine.date}</span>
+            </p>
           </div>
           <button type="button" className="ghost-btn shrink-0" onClick={handleLogout}>
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
-        <div className="flex gap-3">
-          <a href="/dashboard" className="secondary-btn">
-            Volver
+        <div className="flex gap-2.5 pt-1">
+          <a href="/dashboard" className="secondary-btn px-4 text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Volver</span>
           </a>
           {!isCompletedState && (
             <button
               type="button"
-              className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-emerald-600 px-4 text-base font-extrabold text-white transition hover:bg-emerald-700 active:scale-98 shadow-md shadow-emerald-500/10"
+              className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 text-sm font-black text-white transition hover:from-emerald-500 hover:to-emerald-600 active:scale-98 shadow-lg shadow-emerald-600/25 border border-white/20 cursor-pointer gap-2"
               onClick={() => setShowCompleteConfirmation(true)}
             >
-              Terminar rutina
+              <svg className="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Terminar rutina</span>
             </button>
           )}
         </div>
@@ -544,31 +600,33 @@ export default function RoutineDetailView({ routineId }: Props) {
       )}{/* cierre del condicional modo básico vs normal */}
 
       {isCompletedState && (
-        <div className="surface-card bg-emerald-50 border-emerald-200 text-emerald-800 flex items-center gap-3 p-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+        <div className="surface-card bg-gradient-to-br from-emerald-50/80 to-white border-emerald-200 text-emerald-900 flex items-center gap-3 p-4 shadow-sm">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/25">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
           <div>
-            <h3 className="font-extrabold text-slate-900">¡Rutina Completada!</h3>
-            <p className="text-sm font-semibold text-emerald-700">Tu entrenador ya puede ver que finalizaste esta rutina.</p>
+            <h3 className="font-extrabold text-slate-900 text-sm">¡Rutina Completada!</h3>
+            <p className="text-xs font-semibold text-emerald-800">Tu entrenador ya puede ver que finalizaste esta rutina.</p>
           </div>
         </div>
       )}
 
       {suggestedDayTab && activeTabId !== suggestedDayTab.id && !isCompletedState && (
-        <div className="surface-card bg-brand-50/80 border-brand-200 text-brand-800 flex items-center justify-between p-4">
+        <div className="surface-card bg-gradient-to-br from-brand-50/90 via-white to-amber-50/50 border-brand-200/90 text-brand-900 flex items-center justify-between p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="text-xl">🎯</span>
+            <div className="w-9 h-9 rounded-2xl bg-[#26160d] text-[#f5f0e8] flex items-center justify-center font-black text-sm shadow-md shadow-[#26160d]/20">
+              🎯
+            </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 text-sm">Hoy te toca entrenar</h3>
-              <p className="text-xs font-semibold text-brand-700">{suggestedDayTab.label}</p>
+              <h3 className="font-extrabold text-slate-900 text-xs">Hoy te toca entrenar</h3>
+              <p className="text-xs font-black text-[#26160d]">{suggestedDayTab.label}</p>
             </div>
           </div>
           <button
             type="button"
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-brand-600 px-4 text-xs font-extrabold text-white transition hover:bg-brand-700 active:scale-95 shadow-md shadow-brand-500/10 cursor-pointer"
+            className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-[#351f13] to-[#1e1109] px-4 text-xs font-black text-[#f5f0e8] transition hover:brightness-110 active:scale-95 shadow-md shadow-[#26160d]/20 cursor-pointer"
             onClick={() => setActiveTabId(suggestedDayTab.id)}
           >
             Ir a {suggestedDayTab.label}
@@ -579,10 +637,10 @@ export default function RoutineDetailView({ routineId }: Props) {
       {/* En modo básico no hay sugerencia de día, se muestra todo combinado */}
       {!basicMode && activeTab ? (
         <section className="surface-card space-y-3">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand-700">Vista activa</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#8c7a6b]">Vista activa</p>
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl font-extrabold text-slate-900">{activeTab.label}</h2>
-            <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-700">
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">{activeTab.label}</h2>
+            <span className="rounded-full bg-[#faf7f2] border border-[#e6dfd5] px-3 py-1 text-xs font-black uppercase tracking-wide text-[#5e4e43] shadow-xs">
               {activeTab.blocks.length} bloques
             </span>
           </div>
@@ -592,14 +650,14 @@ export default function RoutineDetailView({ routineId }: Props) {
       <div className={basicMode ? 'space-y-4 pb-36' : 'space-y-4 pb-28'}>
         {(basicMode ? basicModeBlocks : (activeTab?.blocks ?? [])).map((block) => (
           <section key={block.id} className="surface-card space-y-4">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center justify-between gap-3 border-b border-[#e6dfd5]/80 pb-3">
               <div className="space-y-1">
-                <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand-700">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#8c7a6b]">
                   {block.type === 'warmup' ? 'Entrada en calor' : 'Bloque de entrenamiento'}
                 </p>
-                <h2 className="text-xl font-extrabold text-slate-900">{block.name}</h2>
+                <h2 className="text-xl font-extrabold text-[#1c1a17]">{block.name}</h2>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
+              <span className="rounded-full bg-[#faf7f2] border border-[#e6dfd5] px-3.5 py-1 text-xs font-bold uppercase tracking-wide text-[#5e4e43] shadow-xs">
                 {block.exercises.length} ejercicios
               </span>
             </div>
@@ -615,18 +673,18 @@ export default function RoutineDetailView({ routineId }: Props) {
                 const wasSaved = lastSaved[exercise.id] && Date.now() - lastSaved[exercise.id] < 3000;
 
                 return (
-                  <li key={exercise.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                  <li key={exercise.id} className="rounded-3xl border border-[#e6dfd5]/90 bg-gradient-to-b from-white via-white/95 to-[#faf7f2]/60 p-4 sm:p-5 space-y-4 shadow-[0_4px_16px_-4px_rgba(38,22,13,0.04),inset_0_1px_0_#ffffff]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex flex-col gap-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-xl font-extrabold text-slate-900">{exercise.name}</h3>
+                          <h3 className="text-xl font-extrabold text-[#1c1a17]">{exercise.name}</h3>
                           {exercise.videoUrl && (
                             <button
                               type="button"
                               onClick={() => handleOpenVideo(exercise.videoUrl!, exercise.name)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-100 hover:bg-brand-200 border border-brand-300 text-brand-800 text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-sm"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#faf7f2] to-[#f5f0e8] hover:to-[#e6dfd5] border border-[#d5c7b5] text-[#26160d] text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs"
                             >
-                              <svg className="w-3.5 h-3.5 text-brand-700 fill-current" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5 text-[#26160d] fill-current" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
                               </svg>
                               <span>Ver Técnica</span>
@@ -634,15 +692,41 @@ export default function RoutineDetailView({ routineId }: Props) {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 bg-slate-100/60 p-0.5 rounded-xl border border-slate-200/50">
+                      <div className="flex items-center gap-2">
+                        {/* Botón de Notita para el Ejercicio */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentNoteInput(exerciseNotes[exercise.id] || '');
+                            setActiveNoteEditor({
+                              exerciseId: exercise.id,
+                              exerciseName: exercise.name
+                            });
+                          }}
+                          className={`p-2.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center relative cursor-pointer ${
+                            exerciseNotes[exercise.id]
+                              ? 'bg-amber-100/90 text-amber-900 border border-amber-300 shadow-xs'
+                              : 'bg-[#faf7f2] text-[#8c7a6b] hover:text-amber-800 hover:bg-amber-50/80 border border-[#e6dfd5]'
+                          }`}
+                          title={exerciseNotes[exercise.id] ? "Ver / Editar nota" : "Agregar nota"}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          {exerciseNotes[exercise.id] && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white animate-pulse"></span>
+                          )}
+                        </button>
+
+                        <div className="flex items-center gap-1 bg-[#faf7f2] p-1 rounded-2xl border border-[#e6dfd5]/80 shadow-xs">
                           <button
                             type="button"
                             onClick={() => handleToggleLikeStatus(exercise.id, 'like')}
-                            className={`p-2 rounded-lg transition-all active:scale-95 ${
+                            className={`p-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                               exercise.likeStatus === 'like'
-                                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
+                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                                : 'text-[#8c7a6b] hover:text-[#26160d] hover:bg-white'
                             }`}
                             title="Me gusta"
                           >
@@ -680,10 +764,40 @@ export default function RoutineDetailView({ routineId }: Props) {
                       </div>
                     </div>
 
+                    {/* Notita / Detalle asignado al ejercicio */}
+                    {exerciseNotes[exercise.id] && (
+                      <div 
+                        onClick={() => {
+                          setCurrentNoteInput(exerciseNotes[exercise.id] || '');
+                          setActiveNoteEditor({
+                            exerciseId: exercise.id,
+                            exerciseName: exercise.name
+                          });
+                        }}
+                        className="rounded-xl bg-amber-50/90 border border-amber-200/80 p-3 text-amber-950 flex items-start gap-2.5 cursor-pointer hover:bg-amber-100/80 transition-all shadow-xs"
+                      >
+                        <div className="w-5 h-5 rounded-md bg-amber-200/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">Nota / Detalle</span>
+                            <span className="text-[10px] font-semibold text-amber-700 hover:underline">Toca para editar ✏️</span>
+                          </div>
+                          <p className="text-xs font-medium text-amber-950 mt-1 whitespace-pre-wrap leading-relaxed">
+                            {exerciseNotes[exercise.id]}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {hasReps && (
                       <div className="space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Pesos por vuelta</p>
-                        <div className="space-y-2 rounded-xl bg-white p-3 border border-slate-100">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8c7a6b]">Pesos por vuelta</p>
+                        <div className="space-y-2 rounded-2xl bg-[#faf7f2]/80 p-3 sm:p-3.5 border border-[#e6dfd5]/80 shadow-xs">
                           <div className="flex flex-col gap-2">
                             {Array.from({ length: exerciseSets }).map((_, setIndex) => {
                               const setReps = repsList[setIndex] || repsList[0] || '?';
@@ -695,13 +809,13 @@ export default function RoutineDetailView({ routineId }: Props) {
                               const isCompleted = isNewFeatureActive && setIndex < completedCount;
                               const isActive = isNewFeatureActive && setIndex === completedCount;
 
-                              let buttonClass = "w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold transition flex justify-between items-center active:scale-[0.99]";
+                              let buttonClass = "w-full rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all flex justify-between items-center active:scale-[0.99] shadow-xs";
                               if (isCompleted) {
-                                buttonClass += " border-emerald-100 bg-emerald-50/20 text-slate-500 opacity-80 hover:bg-emerald-50/30";
+                                buttonClass += " border-emerald-200/80 bg-gradient-to-r from-emerald-50/60 to-white text-slate-500 opacity-85 hover:bg-emerald-50/80";
                               } else if (isActive) {
-                                buttonClass += " border-brand-300 bg-brand-50/40 text-slate-800 hover:border-brand-400 hover:bg-brand-50/60 ring-2 ring-brand-500/10";
+                                buttonClass += " border-[#3d2b20]/35 bg-gradient-to-r from-white to-[#faf7f2] text-[#26160d] hover:border-[#3d2b20]/60 ring-2 ring-[#3d2b20]/15 shadow-sm";
                               } else {
-                                buttonClass += " border-slate-150 bg-slate-50/70 text-slate-700 hover:border-brand-400 hover:bg-brand-50/50";
+                                buttonClass += " border-[#e6dfd5] bg-white text-slate-700 hover:border-[#8c7a6b]/60 hover:bg-[#faf7f2]/50";
                               }
 
                               return (
@@ -729,21 +843,21 @@ export default function RoutineDetailView({ routineId }: Props) {
                                   }}
                                   className={buttonClass}
                                 >
-                                  <span className="font-bold text-slate-800 flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-[#1c1a17] flex items-center gap-2 flex-wrap">
                                     <span>Sesión {setIndex + 1}</span>
-                                    <span className="text-xs text-slate-400 font-normal">({setReps} reps)</span>
+                                    <span className="text-xs text-[#8c7a6b] font-medium">({setReps} reps)</span>
                                     {isCompleted && (
-                                      <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold text-[10px] bg-emerald-50 border border-emerald-100/50 px-1.5 py-0.5 rounded">
+                                      <span className="inline-flex items-center gap-0.5 text-emerald-700 font-extrabold text-[10px] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shadow-2xs">
                                         Completada ✓
                                       </span>
                                     )}
                                     {isActive && (
-                                      <span className="inline-flex items-center gap-0.5 text-brand-700 font-extrabold text-[9px] uppercase tracking-wider bg-brand-100 border border-brand-200/50 px-1.5 py-0.5 rounded animate-pulse">
+                                      <span className="inline-flex items-center gap-0.5 text-[#26160d] font-black text-[9px] uppercase tracking-wider bg-gradient-to-r from-amber-100 to-amber-200/80 border border-amber-300/80 px-2 py-0.5 rounded-full animate-pulse shadow-2xs">
                                         Siguiente 🎯
                                       </span>
                                     )}
                                   </span>
-                                   <span className="font-black text-brand-600 bg-white border border-slate-100 px-3 py-1 rounded-lg text-xs tracking-wider whitespace-nowrap shrink-0">
+                                   <span className="font-black text-[#26160d] bg-[#faf7f2] border border-[#e6dfd5] px-3.5 py-1 rounded-xl text-xs tracking-wider whitespace-nowrap shrink-0 shadow-2xs">
                                      {value}
                                    </span>
                                 </button>
@@ -883,7 +997,7 @@ export default function RoutineDetailView({ routineId }: Props) {
       {/* Selector de tabs: solo en modo normal */}
       {!basicMode && dayTabs.length > 0 ? (
         <div className="fixed bottom-4 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
-          <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-2 shadow-2xl backdrop-blur">
+          <div className="rounded-[32px] border border-white/80 bg-white/85 p-2 shadow-[0_20px_45px_-10px_rgba(38,22,13,0.18),inset_0_1px_0_#ffffff] backdrop-blur-xl">
             <div className="flex w-full gap-2 overflow-x-auto no-scrollbar">
               {dayTabs.map((tab) => {
                 const isActive = tab.id === activeTab?.id;
@@ -895,22 +1009,22 @@ export default function RoutineDetailView({ routineId }: Props) {
                 let labelSuffix = '';
 
                 if (isActive) {
-                  btnClass = 'bg-brand-600 text-white shadow-lg shadow-brand-200';
+                  btnClass = 'bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] shadow-lg shadow-[#26160d]/30 border border-white/10';
                 } else if (isCompleted) {
-                  btnClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                  btnClass = 'bg-emerald-50 text-emerald-800 border border-emerald-200/80';
                   labelSuffix = ' ✓';
                 } else if (isSuggested) {
-                  btnClass = 'bg-brand-50 text-brand-700 border-2 border-dashed border-brand-300 animate-pulse';
+                  btnClass = 'bg-amber-50 text-amber-900 border-2 border-dashed border-amber-300 animate-pulse';
                   labelPrefix = '🎯 ';
                 } else {
-                  btnClass = 'bg-slate-100 text-slate-600';
+                  btnClass = 'bg-[#faf7f2] hover:bg-white text-[#5e4e43] border border-[#e6dfd5]/60';
                 }
 
                 return (
                   <button
                     key={tab.id}
                     type="button"
-                    className={`flex-1 shrink-0 rounded-2xl px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] transition ${btnClass}`}
+                    className={`flex-1 shrink-0 rounded-2xl px-4 py-3 text-sm font-extrabold uppercase tracking-[0.16em] transition-all cursor-pointer active:scale-95 ${btnClass}`}
                     onClick={() => {
                       setActiveTabId(tab.id);
                     }}
@@ -1222,6 +1336,94 @@ export default function RoutineDetailView({ routineId }: Props) {
                 className="px-3.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition active:scale-95"
               >
                 Cerrar Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Bottom Sheet para escribir/editar la notita del ejercicio */}
+      {activeNoteEditor && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div 
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setActiveNoteEditor(null)}
+          />
+          <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl border border-slate-100 shadow-2xl p-5 sm:p-6 overflow-hidden animate-slide-up flex flex-col gap-4 z-10">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700">Nota del ejercicio</span>
+                  <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
+                    {activeNoteEditor.exerciseName}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveNoteEditor(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer transition active:scale-90"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-600 block">
+                Detalles, sensaciones, pesos o ajustes técnicos:
+              </label>
+              <textarea
+                ref={noteTextareaRef}
+                value={currentNoteInput}
+                onChange={(e) => setCurrentNoteInput(e.target.value)}
+                rows={4}
+                placeholder="Ej: Posición 3 de la polea, molesta el hombro con agarre abierto, subir peso la próxima semana..."
+                className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:bg-white transition resize-none leading-relaxed"
+              />
+            </div>
+
+            {noteSavedFeedback && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-pulse">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Nota guardada correctamente.
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
+              {exerciseNotes[activeNoteEditor.exerciseId] && (
+                <button
+                  type="button"
+                  className="h-12 px-4 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-600 hover:bg-red-100 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={() => {
+                    saveExerciseNote(activeNoteEditor.exerciseId, '');
+                    setCurrentNoteInput('');
+                    setActiveNoteEditor(null);
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Borrar
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="touch-btn flex-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-600/20"
+                onClick={() => {
+                  saveExerciseNote(activeNoteEditor.exerciseId, currentNoteInput);
+                  setActiveNoteEditor(null);
+                }}
+              >
+                Guardar Nota
               </button>
             </div>
           </div>

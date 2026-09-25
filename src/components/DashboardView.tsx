@@ -255,37 +255,42 @@ export default function DashboardView() {
     <section className="space-y-4">
       <header className="surface-card space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
-                  <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
-                </svg>
-                <span className="badge-text">Tomás Pussetto</span>
-              </span>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#351f13] via-[#26160d] to-[#170c06] text-[#f5f0e8] flex items-center justify-center font-black text-base shadow-md shadow-[#26160d]/25 border border-white/20 shrink-0">
+              {member && member.firstName ? member.firstName.charAt(0).toUpperCase() : 'TP'}
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-              Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumna'}
-              {isDemoMode() && (
-                <span className="inline-flex items-center rounded-full bg-[#26160d]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#26160d]">Demo</span>
-              )}
-            </h1>
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
+                    <path d="M13 2L4.09 12.97H11L10 22L20.09 11.03H13L13 2Z" />
+                  </svg>
+                  <span className="badge-text">Tomás Pussetto</span>
+                </span>
+                {isDemoMode() && (
+                  <span className="inline-flex items-center rounded-full bg-[#26160d]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#26160d] border border-[#26160d]/15">Demo</span>
+                )}
+              </div>
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 truncate">
+                Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumna'}
+              </h1>
+            </div>
           </div>
           <button type="button" className="ghost-btn shrink-0" onClick={handleLogout}>
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       </header>
 
       {/* Tab Navigation */}
-      <div className="flex rounded-2xl bg-slate-100 p-1 gap-1">
+      <div className="flex rounded-2xl bg-[#ede6dc]/70 p-1.5 gap-1.5 border border-[#e6dfd5]/80 backdrop-blur-md shadow-inner">
         <button
           type="button"
           onClick={() => setActiveTab('rutinas')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wider transition-all ${
+          className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
             activeTab === 'rutinas'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
+              ? 'bg-white text-slate-900 shadow-md shadow-[#26160d]/6 border border-white'
+              : 'text-[#6b584d] hover:text-[#26160d]'
           }`}
         >
           Rutinas
@@ -293,10 +298,10 @@ export default function DashboardView() {
         <button
           type="button"
           onClick={() => setActiveTab('mis-datos')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-extrabold uppercase tracking-wider transition-all ${
+          className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
             activeTab === 'mis-datos'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
+              ? 'bg-white text-slate-900 shadow-md shadow-[#26160d]/6 border border-white'
+              : 'text-[#6b584d] hover:text-[#26160d]'
           }`}
         >
           Mis Datos
@@ -326,31 +331,49 @@ export default function DashboardView() {
               return (
                 <li 
                   key={routine.id} 
-                  className={`surface-card space-y-3 transition-all relative overflow-hidden ${
+                  className={`surface-card space-y-3.5 transition-all relative overflow-hidden group hover:border-[#d5c7b5] ${
                     isCompleted 
-                      ? 'border-emerald-200 bg-emerald-50/20 shadow-emerald-500/5' 
-                      : ''
+                      ? 'border-emerald-200/90 bg-gradient-to-br from-emerald-50/25 to-white shadow-emerald-500/5' 
+                      : 'hover:shadow-md'
                   }`}
                 >
                   {isCompleted && (
-                    <div className="absolute top-0 left-0 h-1 w-full bg-emerald-500" />
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-sm shadow-emerald-500/20" />
                   )}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xl font-bold text-slate-900">{routine.name}</h2>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">{routine.name}</h2>
                       {isCompleted && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                          Terminada ✓
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/90 border border-emerald-200/80 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800 shadow-xs">
+                          <span>Terminada</span>
+                          <span className="font-bold">✓</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-base font-medium text-slate-700">Fecha: {formatDate(routine.date)}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#faf7f2] border border-[#e6dfd5]/80 text-xs font-bold text-[#8c7a6b]">
+                        <svg className="w-3.5 h-3.5 text-[#8c7a6b]" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>{formatDate(routine.date)}</span>
+                      </span>
+                    </div>
                   </div>
                   <a 
                     href={`/routine/${routine.id}`} 
-                    className={`touch-btn ${isCompleted ? 'bg-slate-800 hover:bg-slate-900' : ''}`}
+                    className={`touch-btn flex items-center justify-center gap-2 ${
+                      isCompleted 
+                        ? 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-md shadow-slate-900/20' 
+                        : ''
+                    }`}
                   >
-                    {isCompleted ? 'Ver rutina' : 'Ver'}
+                    <span>Ver rutina</span>
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </a>
                 </li>
               );

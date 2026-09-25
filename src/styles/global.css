@@ -9,13 +9,18 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #f5f0e8;
+  background-color: #faf7f2;
   background-image:
-    radial-gradient(circle at 10% 10%, rgba(38, 22, 13, 0.03) 0%, transparent 45%),
-    radial-gradient(circle at 90% 90%, rgba(28, 26, 23, 0.04) 0%, transparent 50%);
+    radial-gradient(at 10% 8%, rgba(228, 210, 188, 0.45) 0px, transparent 45%),
+    radial-gradient(at 90% 12%, rgba(215, 185, 155, 0.35) 0px, transparent 40%),
+    radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.75) 0px, transparent 70%),
+    radial-gradient(at 15% 85%, rgba(228, 210, 188, 0.38) 0px, transparent 50%),
+    radial-gradient(at 85% 90%, rgba(140, 122, 107, 0.16) 0px, transparent 45%);
+  background-attachment: fixed;
   color: #1c1a17;
   font-size: 16px;
   line-height: 1.5;
+  min-height: 100vh;
 }
 
 * {
@@ -32,16 +37,66 @@ select {
 @layer components {
   .app-shell {
     @apply mx-auto min-h-dvh w-full max-w-md px-4;
-    padding-top: calc(env(safe-area-inset-top) + 1.5rem);
+    padding-top: calc(env(safe-area-inset-top) + 1.25rem);
     padding-bottom: calc(env(safe-area-inset-bottom) + 2rem);
   }
 
   .surface-card {
-    @apply rounded-xl2 border border-[#e6dfd5] bg-white p-4 shadow-[0_10px_30px_rgba(38,22,13,0.04)];
+    border-radius: 1.5rem;
+    border: 1px solid rgba(230, 223, 213, 0.85);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 1.25rem;
+    box-shadow:
+      0 14px 34px -8px rgba(38, 22, 13, 0.06),
+      0 4px 12px -2px rgba(38, 22, 13, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+    position: relative;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .touch-btn {
-    @apply inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#26160d] px-4 text-base font-bold text-[#f5f0e8] transition hover:bg-[#3d2b20] focus:outline-none focus:ring-2 focus:ring-[#26160d] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    display: inline-flex;
+    height: 3.25rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, #321d12 0%, #1c1008 100%);
+    box-shadow:
+      0 8px 24px -4px rgba(38, 22, 13, 0.32),
+      0 2px 6px rgba(38, 22, 13, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: #f5f0e8;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .touch-btn:hover {
+    background: linear-gradient(135deg, #3d2417 0%, #22140a 100%);
+    box-shadow:
+      0 12px 28px -4px rgba(38, 22, 13, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .touch-btn:active {
+    transform: translateY(0px) scale(0.985);
+  }
+
+  .touch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
   /* ── Login button: premium espresso & cream ── */
@@ -52,12 +107,13 @@ select {
     gap: 8px;
     width: 100%;
     height: 3.25rem;
-    border-radius: 0.85rem;
-    border: 1px solid rgba(230, 223, 213, 0.4);
-    background: linear-gradient(135deg, #26160d 0%, #1c1a17 100%);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, #321d12 0%, #1c1008 100%);
     box-shadow:
-      0 4px 20px rgba(38, 22, 13, 0.25),
-      inset 0 1px 0 rgba(245, 240, 232, 0.15);
+      0 8px 24px -4px rgba(38, 22, 13, 0.32),
+      0 2px 6px rgba(38, 22, 13, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
     font-size: 1rem;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -115,8 +171,8 @@ select {
   .login-btn:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 8px 24px rgba(38, 22, 13, 0.35),
-      inset 0 1px 0 rgba(245, 240, 232, 0.25);
+      0 12px 28px -4px rgba(38, 22, 13, 0.38),
+      inset 0 1px 0 rgba(245, 240, 232, 0.28);
   }
 
   /* Press: baja */
@@ -131,15 +187,77 @@ select {
   }
 
   .secondary-btn {
-    @apply inline-flex h-12 items-center justify-center rounded-xl border border-[#e6dfd5] bg-white px-4 text-base font-bold text-[#1c1a17] transition hover:bg-[#faf7f2] focus:outline-none focus:ring-2 focus:ring-[#26160d] focus:ring-offset-2;
+    display: inline-flex;
+    height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 1rem;
+    border: 1px solid rgba(230, 223, 213, 0.85);
+    background: linear-gradient(180deg, #ffffff 0%, #fbf9f6 100%);
+    box-shadow:
+      0 4px 14px -2px rgba(38, 22, 13, 0.05),
+      inset 0 1px 0 #ffffff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1c1a17;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .secondary-btn:hover {
+    background: #ffffff;
+    border-color: #d5c7b5;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px -2px rgba(38, 22, 13, 0.08), inset 0 1px 0 #ffffff;
+  }
+
+  .secondary-btn:active {
+    transform: translateY(0px) scale(0.985);
   }
 
   .ghost-btn {
-    @apply inline-flex h-10 items-center justify-center rounded-xl border border-[#e6dfd5] bg-white px-3 text-sm font-bold text-[#5e4e43] transition hover:border-[#26160d] hover:text-[#1c1a17] focus:outline-none focus:ring-2 focus:ring-[#26160d] focus:ring-offset-2;
+    display: inline-flex;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(230, 223, 213, 0.7);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+    padding: 0 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #5e4e43;
+    box-shadow: 0 2px 6px rgba(38, 22, 13, 0.03), inset 0 1px 0 #ffffff;
+    transition: all 0.15s ease;
+  }
+
+  .ghost-btn:hover {
+    border-color: #26160d;
+    color: #1c1a17;
+    background: #ffffff;
+    transform: translateY(-0.5px);
   }
 
   .touch-input {
-    @apply h-12 w-full rounded-xl border border-[#e6dfd5] bg-white px-4 text-base text-[#1c1a17] outline-none focus:border-[#26160d] focus:ring-2 focus:ring-[#26160d]/10;
+    height: 3.25rem;
+    width: 100%;
+    border-radius: 1rem;
+    border: 1px solid rgba(230, 223, 213, 0.9);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0 1rem;
+    font-size: 1rem;
+    color: #1c1a17;
+    box-shadow: inset 0 1px 2px rgba(38, 22, 13, 0.04);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .touch-input:focus {
+    border-color: #26160d;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(38, 22, 13, 0.08), inset 0 1px 2px rgba(38, 22, 13, 0.02);
   }
 
   .page-title {
@@ -161,9 +279,11 @@ select {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     position: relative;
-    background: #26160d;
-    border: 1px solid #e6dfd5;
-    box-shadow: 0 2px 10px rgba(38, 22, 13, 0.12);
+    background: linear-gradient(135deg, #26160d 0%, #150c07 100%);
+    border: 1px solid rgba(217, 196, 172, 0.45);
+    box-shadow:
+      0 4px 16px rgba(38, 22, 13, 0.18),
+      inset 0 1px 0 rgba(245, 240, 232, 0.25);
     color: #f5f0e8;
   }
 
@@ -179,9 +299,9 @@ select {
     background: linear-gradient(
       110deg,
       transparent 20%,
-      rgba(255, 255, 255, 0.08) 35%,
-      rgba(255, 255, 255, 0.15) 50%,
-      rgba(255, 255, 255, 0.08) 65%,
+      rgba(255, 255, 255, 0.12) 35%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0.12) 65%,
       transparent 80%
     );
     background-size: 250% 100%;
@@ -189,7 +309,7 @@ select {
     border-radius: inherit;
   }
 
-  /* Pulsing aurora glow around the badge */
+  /* Warm bronze champagne glow */
   .brand-badge::after {
     content: '';
     position: absolute;
@@ -197,10 +317,10 @@ select {
     border-radius: 9999px;
     background: linear-gradient(
       45deg,
-      rgba(139, 92, 246, 0.0),
-      rgba(167, 139, 250, 0.4),
-      rgba(196, 181, 253, 0.2),
-      rgba(139, 92, 246, 0.0)
+      rgba(200, 165, 130, 0.0),
+      rgba(226, 207, 185, 0.5),
+      rgba(140, 122, 107, 0.3),
+      rgba(200, 165, 130, 0.0)
     );
     background-size: 300% 300%;
     animation: aurora-border 8s ease-in-out infinite;

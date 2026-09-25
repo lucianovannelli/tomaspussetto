@@ -3,13 +3,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Tomás Pussetto | Método ENDS">
-  <main class="relative min-h-dvh w-full overflow-hidden bg-[#f5f0e8] flex items-center justify-center p-6 font-['Inter']" transition:animate="slide">
+  <main class="relative min-h-dvh w-full overflow-hidden flex items-center justify-center p-6 font-['Inter']" transition:animate="slide">
     <!-- Particles Container -->
     <div id="particles-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
 
-    <!-- Soft Ambient Lighting -->
-    <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#26160d]/5 blur-[120px] rounded-full"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#1c1a17]/5 blur-[120px] rounded-full"></div>
+    <!-- Radiant Ambient Lighting -->
+    <div class="absolute -top-[15%] -left-[10%] w-[70vw] max-w-[500px] h-[70vw] max-h-[500px] bg-gradient-to-br from-[#dfcfbe]/50 to-transparent blur-[110px] rounded-full pointer-events-none"></div>
+    <div class="absolute -bottom-[15%] -right-[10%] w-[75vw] max-w-[550px] h-[75vw] max-h-[550px] bg-gradient-to-tl from-[#e8d5c0]/45 via-[#faf7f2]/20 to-transparent blur-[130px] rounded-full pointer-events-none"></div>
+    <div class="absolute top-[35%] right-[10%] w-60 h-60 bg-[#c9ab8f]/25 blur-[90px] rounded-full pointer-events-none"></div>
 
     <section class="relative z-10 w-full max-w-md space-y-8">
       <!-- Logo Area with Tomás Pussetto Brand Header -->
@@ -25,11 +26,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
 
       <!-- Surface Card -->
-      <div class="relative overflow-hidden rounded-[28px] border border-[#e6dfd5] bg-white p-8 shadow-[0_20px_50px_rgba(38,22,13,0.06)] animate-card-reveal">
+      <div class="relative overflow-hidden rounded-[32px] border border-white/80 bg-white/85 p-8 shadow-[0_24px_60px_-12px_rgba(38,22,13,0.12),inset_0_1px_0_#ffffff] backdrop-blur-2xl animate-card-reveal">
         <form id="login-form" class="space-y-6 relative z-10">
           <div class="space-y-2.5 animate-fade-in animation-delay-700">
             <div class="flex justify-between items-end px-1">
-              <label for="member-id" class="block text-xs font-bold uppercase tracking-wider text-[#5e4e43]">
+              <label for="member-id" class="block text-xs font-black uppercase tracking-widest text-[#5e4e43]">
                 ID Socia
               </label>
             </div>
@@ -45,7 +46,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 type="text"
                 inputmode="numeric"
                 pattern="[0-9]*"
-                class="block w-full h-14 pl-12 pr-4 bg-[#faf7f2] border border-[#e6dfd5] rounded-xl text-[#1c1a17] font-bold text-lg placeholder:text-[#5e4e43]/40 focus:outline-none focus:ring-2 focus:ring-[#26160d]/20 focus:border-[#26160d] focus:bg-white transition-all duration-200"
+                class="block w-full h-14 pl-12 pr-4 bg-[#faf7f2]/80 border border-[#e6dfd5] rounded-2xl text-[#1c1a17] font-extrabold text-lg placeholder:text-[#8c7a6b]/50 focus:outline-none focus:ring-3 focus:ring-[#26160d]/15 focus:border-[#26160d] focus:bg-white shadow-[inset_0_1px_2px_rgba(38,22,13,0.04)] transition-all duration-200"
                 placeholder={import.meta.env.PUBLIC_KSC_DEMO_MODE === 'true' ? '999 o tu ID Socia' : 'Ingresá tu ID de Socia'}
                 required
               />
@@ -70,7 +71,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <button 
               id="demo-login-btn"
               type="button"
-              class="group relative w-full h-12 overflow-hidden rounded-xl border border-dashed border-[#26160d]/30 bg-[#faf7f2] hover:bg-[#f5f0e8] text-[#26160d] font-bold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+              class="group relative w-full h-12 overflow-hidden rounded-2xl border border-dashed border-[#26160d]/30 bg-[#faf7f2]/90 hover:bg-white text-[#26160d] font-bold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shadow-xs"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#26160d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -166,123 +167,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     animation: shake 0.3s ease-in-out 3;
   }
 
-  /* Particles */
+  /* Warm Champagne Particles */
   :global(.particle) {
     position: absolute;
-    background: #8b5cf6;
+    background: #c9ab8f;
     border-radius: 50%;
     pointer-events: none;
-    opacity: 0.3;
-  }
-
-  /* ── Botón Ingresar holográfico ── */
-  .login-holographic-btn {
-    position: relative;
-    width: 100%;
-    height: 4rem;
-    border-radius: 1rem;
-    border: 1px solid transparent;
-    background: linear-gradient(135deg, #1e1b2e 0%, #2d1f4e 45%, #1a1040 100%);
-    background-clip: padding-box;
-    box-shadow:
-      0 0 0 1px rgba(167, 139, 250, 0.45),
-      0 4px 24px rgba(124, 58, 237, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    cursor: pointer;
-    overflow: hidden;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .login-holographic-btn:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 0 0 1px rgba(167, 139, 250, 0.65),
-      0 8px 32px rgba(124, 58, 237, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  .login-holographic-btn:active {
-    transform: scale(0.985);
-  }
-
-  /* Aurora glow exterior */
-  .login-holographic-btn::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 1.1rem;
-    background: linear-gradient(
-      45deg,
-      rgba(139, 92, 246, 0.0),
-      rgba(167, 139, 250, 0.5),
-      rgba(216, 180, 254, 0.25),
-      rgba(139, 92, 246, 0.0)
-    );
-    background-size: 300% 300%;
-    animation: lhb-aurora 8s ease-in-out infinite;
-    z-index: -1;
-    filter: blur(8px);
-  }
-
-  /* Sweep de luz */
-  .lhb-sweep {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      110deg,
-      transparent 15%,
-      rgba(255, 255, 255, 0.06) 30%,
-      rgba(255, 255, 255, 0.13) 50%,
-      rgba(255, 255, 255, 0.06) 70%,
-      transparent 85%
-    );
-    background-size: 250% 100%;
-    animation: lhb-sweep 5.5s ease-in-out infinite;
-    border-radius: inherit;
-    pointer-events: none;
-  }
-
-  /* Texto shimmer */
-  .lhb-text {
-    position: relative;
-    z-index: 1;
-    font-size: 1.2rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    background: linear-gradient(
-      100deg,
-      #c4b5fd 0%,
-      #ede9fe 25%,
-      #ffffff 45%,
-      #ede9fe 60%,
-      #c4b5fd 100%
-    );
-    background-size: 250% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: lhb-shimmer 6s ease-in-out infinite;
-  }
-
-  @keyframes lhb-shimmer {
-    0%   { background-position: 100% 50%; }
-    50%  { background-position: 0%   50%; }
-    100% { background-position: 100% 50%; }
-  }
-
-  @keyframes lhb-sweep {
-    0%   { background-position: 200%  0; }
-    100% { background-position: -200% 0; }
-  }
-
-  @keyframes lhb-aurora {
-    0%   { background-position: 0%   50%; opacity: 0.6; }
-    33%  { background-position: 100% 50%; opacity: 1;   }
-    66%  { background-position: 50%  0%;  opacity: 0.7; }
-    100% { background-position: 0%   50%; opacity: 0.6; }
+    opacity: 0.35;
+    box-shadow: 0 0 6px rgba(201, 171, 143, 0.4);
   }
 </style>
 
