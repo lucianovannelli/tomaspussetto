@@ -255,11 +255,11 @@ export default function DashboardView() {
     <section className="space-y-4">
       <header className="surface-card space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#351f13] via-[#26160d] to-[#170c06] text-[#f5f0e8] flex items-center justify-center font-black text-base shadow-md shadow-[#26160d]/25 border border-white/20 shrink-0">
               {member && member.firstName ? member.firstName.charAt(0).toUpperCase() : 'TP'}
             </div>
-            <div className="space-y-1 min-w-0">
+            <div className="space-y-1 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="brand-badge" style={{ viewTransitionName: 'brand-logo' }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#f5f0e8', flexShrink: 0 }}>
@@ -271,13 +271,23 @@ export default function DashboardView() {
                   <span className="inline-flex items-center rounded-full bg-[#26160d]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#26160d] border border-[#26160d]/15">Demo</span>
                 )}
               </div>
-              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 truncate">
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-snug break-words">
                 Hola, {member ? `${member.firstName} ${member.lastName}` : 'Alumna'}
               </h1>
             </div>
           </div>
-          <button type="button" className="ghost-btn shrink-0" onClick={handleLogout}>
-            Cerrar sesión
+          <button 
+            type="button" 
+            className="w-11 h-11 rounded-2xl border border-[#e6dfd5] bg-[#faf7f2]/80 hover:bg-[#ede6dc] text-[#5e4e43] hover:text-[#26160d] flex items-center justify-center transition active:scale-95 shadow-xs shrink-0 cursor-pointer"
+            onClick={handleLogout}
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
           </button>
         </div>
       </header>
