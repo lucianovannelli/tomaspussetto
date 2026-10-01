@@ -15,6 +15,13 @@ export interface DashboardData {
   lastPayment: LastPaymentSummary | null;
 }
 
+export type NoteAuthor = 'coach' | 'trainee';
+
+export interface ExerciseNoteData {
+  coach?: string;
+  trainee?: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -26,6 +33,8 @@ export interface Exercise {
   videoUrl?: string;
   likeStatus?: 'like' | 'dislike' | null;
   notes?: string;
+  coachNotes?: string;
+  traineeNotes?: string;
 }
 
 export interface RoutineBlock {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl } from '../lib/api';
-import type { RoutineDetail, RoutineBlock } from '../lib/types';
+import type { RoutineDetail, RoutineBlock, NoteAuthor, ExerciseNoteData } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
 interface Props {
@@ -35,8 +35,9 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [selectedRoundIndex, setSelectedRoundIndex] = useState<number | null>(null);
   
   // Exercise Notes states
-  const [exerciseNotes, setExerciseNotes] = useState<Record<string, string>>({});
+  const [exerciseNotes, setExerciseNotes] = useState<Record<string, ExerciseNoteData>>({});
   const [activeNoteEditor, setActiveNoteEditor] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
+  const [selectedNoteAuthor, setSelectedNoteAuthor] = useState<NoteAuthor>('trainee');
   const [currentNoteInput, setCurrentNoteInput] = useState('');
   const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -118,13 +119,26 @@ export default function RoutineDetailView({ routineId }: Props) {
         setRoutine(data);
         setIsCompletedState(data?.completed || false);
         const initialWeights: Record<string, string[]> = {};
-        const initialNotes: Record<string, string> = {};
+        const initialNotes: Record<string, ExerciseNoteData> = {};
 
         // Load persisted notes from localStorage
         try {
           const storedNotes = localStorage.getItem(`tp_routine_notes_${routineId}`);
           if (storedNotes) {
-            Object.assign(initialNotes, JSON.parse(storedNotes));
+            const parsed = JSON.parse(storedNotes);
+            if (parsed && typeof parsed === 'object') {
+              Object.entries(parsed).forEach(([exId, val]) => {
+                if (typeof val === 'string') {
+                  // Legacy migration: single string treated as trainee note
+                  initialNotes[exId] = { trainee: val };
+                } else if (val && typeof val === 'object') {
+                  initialNotes[exId] = {
+                    coach: (val as any).coach || undefined,
+                    trainee: (val as any).trainee || undefined
+                  };
+                }
+              });
+            }
           }
         } catch (e) {
           console.error('Error loading notes from localStorage', e);
@@ -138,8 +152,20 @@ export default function RoutineDetailView({ routineId }: Props) {
             const finalSetsCount = Math.max(setsCount, exerciseSets, existingWeights.length);
             initialWeights[exercise.id] = Array.from({ length: finalSetsCount }, (_, i) => existingWeights[i] || '');
 
-            if (exercise.notes && !initialNotes[exercise.id]) {
-              initialNotes[exercise.id] = exercise.notes;
+            const coachNote = exercise.coachNotes || exercise.notes;
+            if (coachNote) {
+              if (!initialNotes[exercise.id]) {
+                initialNotes[exercise.id] = { coach: coachNote };
+              } else if (!initialNotes[exercise.id].coach) {
+                initialNotes[exercise.id].coach = coachNote;
+              }
+            }
+            if (exercise.traineeNotes && !initialNotes[exercise.id]?.trainee) {
+              if (!initialNotes[exercise.id]) {
+                initialNotes[exercise.id] = { trainee: exercise.traineeNotes };
+              } else {
+                initialNotes[exercise.id].trainee = exercise.traineeNotes;
+              }
             }
           });
         });
@@ -154,14 +180,22 @@ export default function RoutineDetailView({ routineId }: Props) {
       });
   }, [routineId]);
 
-  const saveExerciseNote = (exerciseId: string, noteText: string) => {
+  const saveExerciseNote = (exerciseId: string, author: NoteAuthor, noteText: string) => {
     const trimmed = noteText.trim();
     const updated = { ...exerciseNotes };
+    const currentEntry = { ...(updated[exerciseId] || {}) };
     if (trimmed) {
-      updated[exerciseId] = trimmed;
+      currentEntry[author] = trimmed;
+    } else {
+      delete currentEntry[author];
+    }
+
+    if (currentEntry.coach || currentEntry.trainee) {
+      updated[exerciseId] = currentEntry;
     } else {
       delete updated[exerciseId];
     }
+
     setExerciseNotes(updated);
     try {
       localStorage.setItem(`tp_routine_notes_${routineId}`, JSON.stringify(updated));
@@ -682,6 +716,11 @@ export default function RoutineDetailView({ routineId }: Props) {
                 const isSaving = savingIds[exercise.id];
                 const wasSaved = lastSaved[exercise.id] && Date.now() - lastSaved[exercise.id] < 3000;
 
+                const noteData = exerciseNotes[exercise.id];
+                const hasCoachNote = !!noteData?.coach;
+                const hasTraineeNote = !!noteData?.trainee;
+                const hasAnyNote = hasCoachNote || hasTraineeNote;
+
                 return (
                   <li key={exercise.id} className="rounded-3xl border border-[#e6dfd5]/90 bg-gradient-to-b from-white via-white/95 to-[#faf7f2]/60 p-4 sm:p-5 space-y-4 shadow-[0_4px_16px_-4px_rgba(38,22,13,0.04),inset_0_1px_0_#ffffff]">
                     <div className="flex items-start justify-between gap-3">
@@ -707,24 +746,26 @@ export default function RoutineDetailView({ routineId }: Props) {
                         <button
                           type="button"
                           onClick={() => {
-                            setCurrentNoteInput(exerciseNotes[exercise.id] || '');
+                            const targetAuthor: NoteAuthor = (hasCoachNote && !hasTraineeNote) ? 'coach' : 'trainee';
+                            setSelectedNoteAuthor(targetAuthor);
+                            setCurrentNoteInput(noteData?.[targetAuthor] || '');
                             setActiveNoteEditor({
                               exerciseId: exercise.id,
                               exerciseName: exercise.name
                             });
                           }}
                           className={`p-2.5 rounded-2xl transition-all active:scale-95 flex items-center justify-center relative cursor-pointer ${
-                            exerciseNotes[exercise.id]
+                            hasAnyNote
                               ? 'bg-amber-100/90 text-amber-900 border border-amber-300 shadow-xs'
                               : 'bg-[#faf7f2] text-[#8c7a6b] hover:text-amber-800 hover:bg-amber-50/80 border border-[#e6dfd5]'
                           }`}
-                          title={exerciseNotes[exercise.id] ? "Ver / Editar nota" : "Agregar nota"}
+                          title={hasAnyNote ? "Ver / Editar notas" : "Agregar nota"}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
-                          {exerciseNotes[exercise.id] && (
+                          {hasAnyNote && (
                             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white animate-pulse"></span>
                           )}
                         </button>
@@ -774,33 +815,72 @@ export default function RoutineDetailView({ routineId }: Props) {
                       </div>
                     </div>
 
-                    {/* Notita / Detalle asignado al ejercicio */}
-                    {exerciseNotes[exercise.id] && (
-                      <div 
-                        onClick={() => {
-                          setCurrentNoteInput(exerciseNotes[exercise.id] || '');
-                          setActiveNoteEditor({
-                            exerciseId: exercise.id,
-                            exerciseName: exercise.name
-                          });
-                        }}
-                        className="rounded-xl bg-amber-50/90 border border-amber-200/80 p-3 text-amber-950 flex items-start gap-2.5 cursor-pointer hover:bg-amber-100/80 transition-all shadow-xs"
-                      >
-                        <div className="w-5 h-5 rounded-md bg-amber-200/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">Nota / Detalle</span>
-                            <span className="text-[10px] font-semibold text-amber-700 hover:underline">Toca para editar ✏️</span>
+                    {/* Notas del ejercicio: Entrenador y/o Entrenado */}
+                    {hasAnyNote && (
+                      <div className="space-y-2.5">
+                        {/* Nota del Entrenador */}
+                        {noteData?.coach && (
+                          <div 
+                            onClick={() => {
+                              setSelectedNoteAuthor('coach');
+                              setCurrentNoteInput(noteData.coach || '');
+                              setActiveNoteEditor({
+                                exerciseId: exercise.id,
+                                exerciseName: exercise.name
+                              });
+                            }}
+                            className="rounded-2xl bg-gradient-to-br from-[#faf7f2] via-white to-[#f5f0e8] border border-[#e6dfd5] p-3 text-[#26160d] flex items-start gap-2.5 cursor-pointer hover:border-[#8c7a6b] transition-all shadow-2xs group"
+                          >
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#321d12] to-[#1c1008] text-[#f5f0e8] flex items-center justify-center shrink-0 shadow-2xs text-[11px] mt-0.5">
+                              🧑‍🏫
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#26160d] text-[#f5f0e8] text-[9px] font-black uppercase tracking-wider">
+                                  Nota de Entrenador
+                                </span>
+                                <span className="text-[10px] font-bold text-[#8c7a6b] group-hover:text-[#26160d] group-hover:underline">
+                                  Editar ✏️
+                                </span>
+                              </div>
+                              <p className="text-xs font-semibold text-[#26160d] mt-1 whitespace-pre-wrap leading-relaxed">
+                                {noteData.coach}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs font-medium text-amber-950 mt-1 whitespace-pre-wrap leading-relaxed">
-                            {exerciseNotes[exercise.id]}
-                          </p>
-                        </div>
+                        )}
+
+                        {/* Nota del Entrenado */}
+                        {noteData?.trainee && (
+                          <div 
+                            onClick={() => {
+                              setSelectedNoteAuthor('trainee');
+                              setCurrentNoteInput(noteData.trainee || '');
+                              setActiveNoteEditor({
+                                exerciseId: exercise.id,
+                                exerciseName: exercise.name
+                              });
+                            }}
+                            className="rounded-2xl bg-gradient-to-br from-amber-50/90 to-[#faf7f2] border border-amber-200/90 p-3 text-amber-950 flex items-start gap-2.5 cursor-pointer hover:bg-amber-100/70 transition-all shadow-2xs group"
+                          >
+                            <div className="w-6 h-6 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 shadow-2xs text-[11px] mt-0.5">
+                              🏃
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-200/90 text-amber-900 border border-amber-300/80 text-[9px] font-black uppercase tracking-wider">
+                                  Nota de Entrenado
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-800 group-hover:underline">
+                                  Editar ✏️
+                                </span>
+                              </div>
+                              <p className="text-xs font-semibold text-amber-950 mt-1 whitespace-pre-wrap leading-relaxed">
+                                {noteData.trainee}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1352,93 +1432,157 @@ export default function RoutineDetailView({ routineId }: Props) {
         </div>
       )}
 
-      {/* Modal / Bottom Sheet para escribir/editar la notita del ejercicio */}
-      {activeNoteEditor && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div 
-            className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setActiveNoteEditor(null)}
-          />
-          <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl border border-slate-100 shadow-2xl p-5 sm:p-6 overflow-hidden animate-slide-up flex flex-col gap-4 z-10">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+      {/* Modal / Bottom Sheet para escribir/editar la nota del ejercicio */}
+      {activeNoteEditor && (() => {
+        const currentExerciseNotes = exerciseNotes[activeNoteEditor.exerciseId] || {};
+        const isCoach = selectedNoteAuthor === 'coach';
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div 
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+              onClick={() => setActiveNoteEditor(null)}
+            />
+            <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl border border-slate-100 shadow-2xl p-5 sm:p-6 overflow-hidden animate-slide-up flex flex-col gap-4 z-10">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs text-lg ${
+                    isCoach ? 'bg-[#26160d] text-[#f5f0e8]' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {isCoach ? '🧑‍🏫' : '🏃'}
+                  </div>
+                  <div>
+                    <span className={`text-[10px] font-black uppercase tracking-wider ${
+                      isCoach ? 'text-[#8c7a6b]' : 'text-amber-700'
+                    }`}>
+                      {isCoach ? 'Nota de Entrenador (Tomás)' : 'Nota de Entrenado (Alumno/a)'}
+                    </span>
+                    <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
+                      {activeNoteEditor.exerciseName}
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700">Nota del ejercicio</span>
-                  <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
-                    {activeNoteEditor.exerciseName}
-                  </h3>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveNoteEditor(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer transition active:scale-90"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600 block">
-                Detalles, sensaciones, pesos o ajustes técnicos:
-              </label>
-              <textarea
-                ref={noteTextareaRef}
-                value={currentNoteInput}
-                onChange={(e) => setCurrentNoteInput(e.target.value)}
-                rows={4}
-                placeholder="Ej: Posición 3 de la polea, molesta el hombro con agarre abierto, subir peso la próxima semana..."
-                className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:bg-white transition resize-none leading-relaxed"
-              />
-            </div>
-
-            {noteSavedFeedback && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-pulse">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Nota guardada correctamente.
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 pt-1">
-              {exerciseNotes[activeNoteEditor.exerciseId] && (
                 <button
                   type="button"
-                  className="h-12 px-4 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-600 hover:bg-red-100 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={() => setActiveNoteEditor(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer transition active:scale-90"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Selector de autor: Entrenador vs Entrenado */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
+                  ¿Quién deja la nota?
+                </label>
+                <div className="flex rounded-2xl bg-[#ede6dc]/70 p-1 gap-1 border border-[#e6dfd5] shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedNoteAuthor('coach');
+                      setCurrentNoteInput(currentExerciseNotes.coach || '');
+                    }}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isCoach
+                        ? 'bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] shadow-md border border-white/10'
+                        : 'text-[#6b584d] hover:text-[#26160d]'
+                    }`}
+                  >
+                    <span>🧑‍🏫</span>
+                    <span>Entrenador</span>
+                    {currentExerciseNotes.coach && (
+                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedNoteAuthor('trainee');
+                      setCurrentNoteInput(currentExerciseNotes.trainee || '');
+                    }}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      !isCoach
+                        ? 'bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] shadow-md border border-white/10'
+                        : 'text-[#6b584d] hover:text-[#26160d]'
+                    }`}
+                  >
+                    <span>🏃</span>
+                    <span>Entrenado</span>
+                    {currentExerciseNotes.trainee && (
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 block">
+                  {isCoach
+                    ? 'Indicaciones técnicas, postura o carga sugerida por el entrenador:'
+                    : 'Sensaciones, molestias, comentarios o dudas del alumno:'}
+                </label>
+                <textarea
+                  ref={noteTextareaRef}
+                  value={currentNoteInput}
+                  onChange={(e) => setCurrentNoteInput(e.target.value)}
+                  rows={4}
+                  placeholder={
+                    isCoach
+                      ? 'Ej: Bajar lento en 3 segs, no trabar rodillas, subir 2.5 kg si completás cómodo...'
+                      : 'Ej: Molestó un poco el hombro en la última serie, posición 3 de polea...'
+                  }
+                  className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:bg-white transition resize-none leading-relaxed"
+                />
+              </div>
+
+              {noteSavedFeedback && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-pulse">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Nota de {isCoach ? 'Entrenador' : 'Entrenado'} guardada correctamente.
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                {currentExerciseNotes[selectedNoteAuthor] && (
+                  <button
+                    type="button"
+                    className="h-12 px-4 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-600 hover:bg-red-100 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                    onClick={() => {
+                      saveExerciseNote(activeNoteEditor.exerciseId, selectedNoteAuthor, '');
+                      setCurrentNoteInput('');
+                      setActiveNoteEditor(null);
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Borrar
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className={`touch-btn flex-1 text-white font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                    isCoach
+                      ? 'bg-[#26160d] hover:bg-[#321d12] shadow-[#26160d]/20'
+                      : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+                  }`}
                   onClick={() => {
-                    saveExerciseNote(activeNoteEditor.exerciseId, '');
-                    setCurrentNoteInput('');
+                    saveExerciseNote(activeNoteEditor.exerciseId, selectedNoteAuthor, currentNoteInput);
                     setActiveNoteEditor(null);
                   }}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Borrar
+                  Guardar como {isCoach ? 'Entrenador' : 'Entrenado'}
                 </button>
-              )}
-
-              <button
-                type="button"
-                className="touch-btn flex-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-600/20"
-                onClick={() => {
-                  saveExerciseNote(activeNoteEditor.exerciseId, currentNoteInput);
-                  setActiveNoteEditor(null);
-                }}
-              >
-                Guardar Nota
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </section>
   );
 }
