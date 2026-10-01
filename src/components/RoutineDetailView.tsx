@@ -869,7 +869,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-200/90 text-amber-900 border border-amber-300/80 text-[9px] font-black uppercase tracking-wider">
-                                  Nota de Entrenado
+                                  Nota de Alumna
                                 </span>
                                 <span className="text-[10px] font-bold text-amber-800 group-hover:underline">
                                   Editar ✏️
@@ -1455,7 +1455,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                     <span className={`text-[10px] font-black uppercase tracking-wider ${
                       isCoach ? 'text-[#8c7a6b]' : 'text-amber-700'
                     }`}>
-                      {isCoach ? 'Nota de Entrenador (Tomás)' : 'Nota de Entrenado (Alumno/a)'}
+                      {isCoach ? 'Nota de Entrenador (Tomás)' : 'Nota de Alumna'}
                     </span>
                     <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
                       {activeNoteEditor.exerciseName}
@@ -1471,7 +1471,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                 </button>
               </div>
 
-              {/* Selector de autor: Entrenador vs Entrenado */}
+              {/* Selector de autor: Entrenador vs Alumna */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 block">
                   ¿Quién deja la nota?
@@ -1509,7 +1509,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                     }`}
                   >
                     <span>🏃</span>
-                    <span>Entrenado</span>
+                    <span>Alumna</span>
                     {currentExerciseNotes.trainee && (
                       <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                     )}
@@ -1521,7 +1521,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                 <label className="text-xs font-bold text-slate-600 block">
                   {isCoach
                     ? 'Indicaciones técnicas, postura o carga sugerida por el entrenador:'
-                    : 'Sensaciones, molestias, comentarios o dudas del alumno:'}
+                    : 'Sensaciones, molestias, comentarios o dudas de la alumna:'}
                 </label>
                 <textarea
                   ref={noteTextareaRef}
@@ -1542,7 +1542,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  Nota de {isCoach ? 'Entrenador' : 'Entrenado'} guardada correctamente.
+                  Nota de {isCoach ? 'Entrenador' : 'Alumna'} guardada correctamente.
                 </div>
               )}
 
@@ -1576,7 +1576,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                     setActiveNoteEditor(null);
                   }}
                 >
-                  Guardar como {isCoach ? 'Entrenador' : 'Entrenado'}
+                  Guardar como {isCoach ? 'Entrenador' : 'Alumna'}
                 </button>
               </div>
             </div>
