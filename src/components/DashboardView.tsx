@@ -3,6 +3,7 @@ import { fetchDashboard, fetchMember, updateMember, isDemoMode, fetchMemberPayme
 import type { LastPaymentSummary, RoutineSummary, Member, Payment } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 import SatisfactionSensor from './SatisfactionSensor';
+import CoachNotificationCard from './CoachNotificationCard';
 
 const STORAGE_KEY = 'tp_member_id';
 const FALLBACK_STORAGE_KEY = 'ksc_member_id';
@@ -291,6 +292,9 @@ export default function DashboardView() {
           </button>
         </div>
       </header>
+
+      {/* Tarjeta de Notificaciones para el Entrenador (ID 1) */}
+      <CoachNotificationCard memberId={memberId} />
 
       {/* Tab Navigation */}
       <div className="flex rounded-2xl bg-[#ede6dc]/70 p-1.5 gap-1.5 border border-[#e6dfd5]/80 backdrop-blur-md shadow-inner">

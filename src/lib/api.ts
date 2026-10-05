@@ -629,4 +629,73 @@ export function getYouTubeEmbedUrl(url: string | undefined): string | null {
   return url;
 }
 
+export async function savePushSubscription(memberId: string, subscription: any): Promise<{ ok: boolean; message?: string }> {
+  if (isDemoMode()) {
+    console.log('Demo Mode: Simulating savePushSubscription', { memberId, subscription });
+    return { ok: true, message: 'Demo subscription saved' };
+  }
+  try {
+    const response = await fetch(`${API_BASE}/push/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        memberId,
+        subscription,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      })
+    });
+    const data = (await response.json().catch(() => ({}))) as any;
+    return { ok: response.ok, message: data?.message || data?.error };
+  } catch (error: any) {
+    console.error('Failed to save push subscription via API', error);
+    return { ok: false, message: error?.message || 'Error de conexión con el servidor' };
+  }
+}
+
+export async function removePushSubscription(memberId: string, endpoint: string): Promise<boolean> {
+  if (isDemoMode()) {
+    console.log('Demo Mode: Simulating removePushSubscription', { memberId, endpoint });
+    return true;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/push/unsubscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        memberId,
+        endpoint
+      })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to remove push subscription via API', error);
+    return false;
+  }
+}
+
+export async function sendTestPushNotification(memberId: string): Promise<boolean> {
+  if (isDemoMode()) {
+    console.log('Demo Mode: Simulating sendTestPushNotification', { memberId });
+    return true;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/push/test`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ memberId })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to send test push notification via API', error);
+    return false;
+  }
+}
+
+
 
