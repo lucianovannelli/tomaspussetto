@@ -293,8 +293,8 @@ export default function DashboardView() {
         </div>
       </header>
 
-      {/* Tarjeta de Notificaciones para el Entrenador (ID 1) */}
-      <CoachNotificationCard memberId={memberId} />
+      {/* Tarjeta de Notificaciones: permanente para Entrenador, o banner para Alumnas */}
+      <CoachNotificationCard memberId={memberId} isBanner={memberId !== '1'} />
 
       {/* Tab Navigation */}
       <div className="flex rounded-2xl bg-[#ede6dc]/70 p-1.5 gap-1.5 border border-[#e6dfd5]/80 backdrop-blur-md shadow-inner">
@@ -592,6 +592,11 @@ export default function DashboardView() {
                     </>
                 )}
               </section>
+
+              {/* Ajustes de Notificaciones para Alumnas */}
+              {memberId !== '1' && (
+                <CoachNotificationCard memberId={memberId} isBanner={false} />
+              )}
 
               {/* Tarjeta de Coach y Feedback */}
               <section className="surface-card space-y-3 border border-[#e6dfd5] bg-[#faf7f2]">

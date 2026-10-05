@@ -238,6 +238,12 @@ export async function unsubscribeFromPush(rawMemberId: string): Promise<boolean>
 
 export async function triggerTestNotification(rawMemberId: string): Promise<boolean> {
   const memberId = rawMemberId.trim();
+  const isCoach = memberId === '1';
+
+  const testTitle = isCoach ? '🔔 Tomás Pussetto - Coach' : '🔔 Tomás Pussetto - Tu Plan';
+  const testBody = isCoach
+    ? '¡Notificaciones activas! Acá vas a recibir avisos cuando tus alumnas dejen notas.'
+    : '¡Notificaciones activadas! Acá te van a llegar las indicaciones de Tomás en tus ejercicios.';
 
   let notificationShown = false;
 
@@ -245,8 +251,8 @@ export async function triggerTestNotification(rawMemberId: string): Promise<bool
   try {
     const registration = await navigator.serviceWorker.ready;
     if (registration && typeof registration.showNotification === 'function') {
-      await registration.showNotification('🔔 Tomás Pussetto - Coach', {
-        body: '¡Notificaciones activas! Acá vas a recibir avisos cuando tus alumnas dejen notas.',
+      await registration.showNotification(testTitle, {
+        body: testBody,
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png',
         tag: 'tp-test-notification'
@@ -260,8 +266,8 @@ export async function triggerTestNotification(rawMemberId: string): Promise<bool
   // 2. Fallback Notification directa
   if (!notificationShown && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     try {
-      new Notification('🔔 Tomás Pussetto - Coach', {
-        body: '¡Notificaciones activas! Acá vas a recibir avisos cuando tus alumnas dejen notas.',
+      new Notification(testTitle, {
+        body: testBody,
         icon: '/icons/icon-192.png'
       });
       notificationShown = true;
