@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl } from '../lib/api';
+import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl, saveExerciseNote as apiSaveExerciseNote } from '../lib/api';
 import type { RoutineDetail, RoutineBlock, NoteAuthor, ExerciseNoteData } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
@@ -156,11 +156,11 @@ export default function RoutineDetailView({ routineId }: Props) {
             if (coachNote) {
               if (!initialNotes[exercise.id]) {
                 initialNotes[exercise.id] = { coach: coachNote };
-              } else if (!initialNotes[exercise.id].coach) {
+              } else {
                 initialNotes[exercise.id].coach = coachNote;
               }
             }
-            if (exercise.traineeNotes && !initialNotes[exercise.id]?.trainee) {
+            if (exercise.traineeNotes) {
               if (!initialNotes[exercise.id]) {
                 initialNotes[exercise.id] = { trainee: exercise.traineeNotes };
               } else {
@@ -171,6 +171,11 @@ export default function RoutineDetailView({ routineId }: Props) {
         });
         setWeights(initialWeights);
         setExerciseNotes(initialNotes);
+        try {
+          localStorage.setItem(`tp_routine_notes_${routineId}`, JSON.stringify(initialNotes));
+        } catch (e) {
+          console.error('Error saving initial notes to localStorage cache', e);
+        }
       })
       .catch(() => {
         setError('No se pudo cargar la rutina.');
@@ -180,7 +185,7 @@ export default function RoutineDetailView({ routineId }: Props) {
       });
   }, [routineId]);
 
-  const saveExerciseNote = (exerciseId: string, author: NoteAuthor, noteText: string) => {
+  const saveExerciseNote = async (exerciseId: string, author: NoteAuthor, noteText: string) => {
     const trimmed = noteText.trim();
     const updated = { ...exerciseNotes };
     const currentEntry = { ...(updated[exerciseId] || {}) };
@@ -204,6 +209,12 @@ export default function RoutineDetailView({ routineId }: Props) {
     }
     setNoteSavedFeedback(true);
     setTimeout(() => setNoteSavedFeedback(false), 2000);
+
+    try {
+      await apiSaveExerciseNote(routineId, exerciseId, author, trimmed);
+    } catch (e) {
+      console.error('Error saving exercise note to backend', e);
+    }
   };
 
   const dayTabs = useMemo(() => {

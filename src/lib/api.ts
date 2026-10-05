@@ -530,6 +530,41 @@ export async function saveExerciseLikeStatus(routineId: string, exerciseId: stri
   }
 }
 
+export async function saveExerciseNote(
+  routineId: string,
+  exerciseId: string,
+  author: 'coach' | 'trainee',
+  noteText: string
+): Promise<boolean> {
+  if (isDemoMode()) {
+    console.log('Demo Mode: Simulating saving exercise note', { routineId, exerciseId, author, noteText });
+    return new Promise((resolve) => setTimeout(() => resolve(true), 300));
+  }
+  try {
+    const payload: { exerciseId: string; coachNotes?: string; traineeNotes?: string } = {
+      exerciseId
+    };
+    if (author === 'coach') {
+      payload.coachNotes = noteText;
+    } else {
+      payload.traineeNotes = noteText;
+    }
+
+    const response = await fetch(`${API_BASE}/routine/${encodeURIComponent(routineId)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to save exercise note via API', error);
+    return false;
+  }
+}
+
+
 export async function fetchMemberPayments(memberId: string): Promise<Payment[]> {
   if (isDemoMode() || memberId === '999') {
     return [
