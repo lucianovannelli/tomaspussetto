@@ -66,69 +66,91 @@ export default function CoachNotificationCard({ memberId, isBanner = false }: Pr
     setLoading(true);
     setFeedback(null);
 
-    const res = await subscribeToPush(memberId);
-    setLoading(false);
-
-    if (res.success) {
-      setPermission('granted');
-      setIsSubscribed(true);
-      try {
-        localStorage.setItem(`tp_push_subscribed_${memberId}`, 'true');
-        localStorage.removeItem(`tp_push_explicitly_disabled_${memberId}`);
-      } catch {}
-      setFeedback({
-        type: 'success',
-        message: isCoach
-          ? '¡Notificaciones activadas! Vas a recibir avisos cuando tus alumnas dejen notas.'
-          : '¡Notificaciones activadas! Te avisaremos cuando Tomás te deje indicaciones o correcciones.'
-      });
-      // Disparar prueba automática
-      setTimeout(() => {
-        void triggerTestNotification(memberId);
-      }, 500);
-    } else {
+    try {
+      const res = await subscribeToPush(memberId);
+      if (res.success) {
+        setPermission('granted');
+        setIsSubscribed(true);
+        try {
+          localStorage.setItem(`tp_push_subscribed_${memberId}`, 'true');
+          localStorage.removeItem(`tp_push_explicitly_disabled_${memberId}`);
+        } catch {}
+        setFeedback({
+          type: 'success',
+          message: isCoach
+            ? '¡Notificaciones activadas! Vas a recibir avisos cuando tus alumnas dejen notas.'
+            : '¡Notificaciones activadas! Te avisaremos cuando Tomás te deje indicaciones o correcciones.'
+        });
+        // Disparar prueba automática
+        setTimeout(() => {
+          void triggerTestNotification(memberId);
+        }, 500);
+      } else {
+        setFeedback({
+          type: 'error',
+          message: res.error || 'No se pudieron activar las notificaciones.'
+        });
+        const perm = getNotificationPermission();
+        setPermission(perm);
+      }
+    } catch (err: any) {
       setFeedback({
         type: 'error',
-        message: res.error || 'No se pudieron activar las notificaciones.'
+        message: err?.message || 'Error inesperado al activar notificaciones.'
       });
-      const perm = getNotificationPermission();
-      setPermission(perm);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleTest = async () => {
     setLoading(true);
     setFeedback(null);
-    const sent = await triggerTestNotification(memberId);
-    setLoading(false);
-
-    if (sent) {
-      setFeedback({
-        type: 'success',
-        message: '¡Notificación enviada! Deberías verla en la pantalla de tu dispositivo.'
-      });
-    } else {
+    try {
+      const sent = await triggerTestNotification(memberId);
+      if (sent) {
+        setFeedback({
+          type: 'success',
+          message: '¡Notificación enviada! Deberías verla en la pantalla de tu dispositivo.'
+        });
+      } else {
+        setFeedback({
+          type: 'error',
+          message: 'No se pudo enviar la notificación de prueba. Verificá los permisos del navegador.'
+        });
+      }
+    } catch (err: any) {
       setFeedback({
         type: 'error',
-        message: 'No se pudo enviar la notificación de prueba. Verificá los permisos del navegador.'
+        message: err?.message || 'Error al enviar prueba.'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeactivate = async () => {
     setLoading(true);
     setFeedback(null);
-    await unsubscribeFromPush(memberId);
     try {
-      localStorage.setItem(`tp_push_explicitly_disabled_${memberId}`, 'true');
-      localStorage.removeItem(`tp_push_subscribed_${memberId}`);
-    } catch {}
-    setLoading(false);
-    setIsSubscribed(false);
-    setFeedback({
-      type: 'success',
-      message: 'Notificaciones silenciadas en este dispositivo.'
-    });
+      await unsubscribeFromPush(memberId);
+      try {
+        localStorage.setItem(`tp_push_explicitly_disabled_${memberId}`, 'true');
+        localStorage.removeItem(`tp_push_subscribed_${memberId}`);
+      } catch {}
+      setIsSubscribed(false);
+      setFeedback({
+        type: 'success',
+        message: 'Notificaciones silenciadas en este dispositivo.'
+      });
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: err?.message || 'Error al silenciar notificaciones.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (permission === 'unsupported') {

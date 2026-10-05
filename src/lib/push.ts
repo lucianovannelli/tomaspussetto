@@ -82,7 +82,7 @@ export async function requestPermissionSafe(): Promise<NotificationPermission> {
       return await result;
     }
   } catch (err) {
-    console.warn('[push] Error invoking Promise-based requestPermission:', err);
+    console.warn('[push] Error con Promise en requestPermission:', err);
   }
 
   return new Promise<NotificationPermission>((resolve) => {
@@ -94,15 +94,133 @@ export async function requestPermissionSafe(): Promise<NotificationPermission> {
   });
 }
 
+/**
+ * Obtiene el ServiceWorkerRegistration activo o lo registra si no existe.
+ */
+export async function getSWRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
+
+  try {
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    }
+    return reg || null;
+  } catch (err) {
+    console.warn('[push] Error obteniendo registro de ServiceWorker:', err);
+    return null;
+  }
+}
+
+/**
+ * Espera a que el ServiceWorker esté activo (sin colgarse).
+ */
+export async function waitForActiveRegistration(registration: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
+  if (registration.active && registration.active.state === 'activated') {
+    return registration;
+  }
+
+  if (registration.waiting) {
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+  if (registration.installing) {
+    registration.installing.postMessage({ type: 'SKIP_WAITING' });
+  }
+
+  // 1. Intentar con navigator.serviceWorker.ready con timeout de 3s
+  try {
+    const readyPromise = navigator.serviceWorker.ready;
+    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+    const readyReg = await Promise.race([readyPromise, timeoutPromise]);
+    if (readyReg && readyReg.active) {
+      return readyReg;
+    }
+  } catch (e) {}
+
+  // 2. Escuchar statechange si hay un worker en transición
+  const sw = registration.installing || registration.waiting || registration.active;
+  if (sw && sw.state !== 'activated') {
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 2500);
+      const onStateChange = () => {
+        if (sw.state === 'activated') {
+          sw.removeEventListener('statechange', onStateChange);
+          clearTimeout(timer);
+          resolve();
+        }
+      };
+      sw.addEventListener('statechange', onStateChange);
+    });
+  }
+
+  const latest = await navigator.serviceWorker.getRegistration();
+  return latest || registration;
+}
+
+/**
+ * Crea o recupera la suscripción con múltiples estrategias de buffer (Uint8Array y ArrayBuffer)
+ */
+export async function createPushSubscription(registration: ServiceWorkerRegistration): Promise<{ subscription: PushSubscription | null; error?: string }> {
+  const vapidKey = getVapidPublicKey();
+  const rawKey = urlBase64ToUint8Array(vapidKey);
+
+  // 1. Si ya existe suscripción previa, verificar si es válida
+  try {
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+      const s = serializeSubscription(existing);
+      if (s.endpoint && s.keys.p256dh && s.keys.auth) {
+        return { subscription: existing };
+      }
+      try {
+        await existing.unsubscribe();
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('[push] Error inspeccionando suscripción previa:', e);
+  }
+
+  let lastError = '';
+
+  // 2. Intento 1 con Uint8Array
+  try {
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: rawKey as unknown as BufferSource
+    });
+    if (sub) return { subscription: sub };
+  } catch (err1: any) {
+    lastError = err1?.name ? `${err1.name}: ${err1.message}` : String(err1);
+    console.warn('[push] Intento 1 (Uint8Array) falló:', lastError);
+  }
+
+  // 3. Intento 2 con rawKey.buffer (necesario en Android Chrome/Samsung Internet)
+  try {
+    const sub = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: rawKey.buffer as unknown as BufferSource
+    });
+    if (sub) return { subscription: sub };
+  } catch (err2: any) {
+    lastError = err2?.name ? `${err2.name}: ${err2.message}` : String(err2);
+    console.warn('[push] Intento 2 (ArrayBuffer) falló:', lastError);
+  }
+
+  return { 
+    subscription: null, 
+    error: lastError || 'El navegador no pudo generar la suscripción push.' 
+  };
+}
+
 export async function getPushSubscription(): Promise<PushSubscription | null> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
-    if (!registration.pushManager) return null;
+    const registration = await getSWRegistration();
+    if (!registration || !registration.pushManager) return null;
     return await registration.pushManager.getSubscription();
   } catch (err) {
-    console.warn('[push] Error getting subscription:', err);
+    console.warn('[push] Error obteniendo suscripción:', err);
     return null;
   }
 }
@@ -123,11 +241,15 @@ export async function subscribeToPush(rawMemberId: string): Promise<{ success: b
   }
 
   let permission: NotificationPermission = 'default';
-  if ('Notification' in window) {
-    permission = Notification.permission;
-    if (permission === 'default') {
-      permission = await requestPermissionSafe();
+  try {
+    if ('Notification' in window) {
+      permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await requestPermissionSafe();
+      }
     }
+  } catch (permErr: any) {
+    return { success: false, error: 'Error solicitando permiso: ' + (permErr?.message || permErr) };
   }
 
   if (permission !== 'granted') {
@@ -144,57 +266,40 @@ export async function subscribeToPush(rawMemberId: string): Promise<{ success: b
     return { success: false, error: 'Tu navegador no soporta Service Workers' };
   }
 
-  let registration: ServiceWorkerRegistration;
-  try {
-    registration = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout esperando Service Worker')), 5000))
-    ]);
-  } catch {
-    try {
-      registration = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
-    } catch (e: any) {
-      return { success: false, error: 'No se pudo iniciar el Service Worker: ' + (e?.message || e) };
-    }
+  let registration = await getSWRegistration();
+  if (!registration) {
+    return {
+      success: false,
+      error: 'No se pudo conectar con el Service Worker (recargá la página e intentá nuevamente).'
+    };
   }
+
+  registration = await waitForActiveRegistration(registration);
 
   if (!registration.pushManager) {
     return {
       success: false,
-      error: 'Tu navegador no soporta el administrador de Push (pushManager).'
+      error: 'PushManager no está disponible en este navegador.'
     };
   }
 
-  let subscription: PushSubscription | null = null;
-  try {
-    subscription = await registration.pushManager.getSubscription();
-  } catch (err) {
-    console.warn('[push] Error verificando suscripción existente:', err);
-  }
-
+  const { subscription, error: subError } = await createPushSubscription(registration);
   if (!subscription) {
-    const vapidKey = getVapidPublicKey();
-    let applicationServerKey: Uint8Array;
-    try {
-      applicationServerKey = urlBase64ToUint8Array(vapidKey);
-    } catch (e: any) {
-      return { success: false, error: 'Clave pública VAPID inválida: ' + (e?.message || e) };
-    }
-
-    try {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as unknown as BufferSource
-      });
-    } catch (e: any) {
-      return { success: false, error: 'Error al registrar suscripción: ' + (e?.message || e) };
-    }
+    return {
+      success: false,
+      error: subError || 'No se pudo generar la suscripción push.'
+    };
   }
 
-  const serialized = serializeSubscription(subscription);
-  const saveRes = await savePushSubscription(memberId, serialized);
+  const payload = serializeSubscription(subscription);
+  if (!payload.endpoint || !payload.keys.p256dh || !payload.keys.auth) {
+    return {
+      success: false,
+      error: 'Las claves de notificación generadas están vacías.'
+    };
+  }
 
+  const saveRes = await savePushSubscription(memberId, payload);
   if (!saveRes.ok) {
     return {
       success: false,
@@ -203,7 +308,9 @@ export async function subscribeToPush(rawMemberId: string): Promise<{ success: b
   }
 
   try {
+    localStorage.removeItem(`tp_push_explicitly_disabled_${memberId}`);
     localStorage.removeItem('tp_push_explicitly_disabled');
+    localStorage.setItem(`tp_push_subscribed_${memberId}`, 'true');
     localStorage.setItem('tp_push_subscribed', 'true');
   } catch {
     // ignore
@@ -217,8 +324,8 @@ export async function unsubscribeFromPush(rawMemberId: string): Promise<boolean>
 
   const memberId = rawMemberId.trim();
   try {
-    localStorage.setItem('tp_push_explicitly_disabled', 'true');
-    localStorage.removeItem('tp_push_subscribed');
+    localStorage.setItem(`tp_push_explicitly_disabled_${memberId}`, 'true');
+    localStorage.removeItem(`tp_push_subscribed_${memberId}`);
   } catch {
     // ignore
   }
@@ -249,7 +356,7 @@ export async function triggerTestNotification(rawMemberId: string): Promise<bool
 
   // 1. Mostrar localmente vía Service Worker
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await getSWRegistration();
     if (registration && typeof registration.showNotification === 'function') {
       await registration.showNotification(testTitle, {
         body: testBody,
