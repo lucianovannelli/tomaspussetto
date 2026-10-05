@@ -37,7 +37,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        navigateFallback: null,
+        globPatterns: ['_astro/**/*.{js,css}', 'icons/**/*.{png,svg}', '*.{png,svg,ico,webmanifest}'],
+        globIgnores: ['**/_worker.js/**/*', '**/_worker.js', '_worker.js/**/*', '_worker.js'],
         importScripts: ['/sw-push.js'],
         clientsClaim: true,
         skipWaiting: true

@@ -127,21 +127,11 @@ export async function waitForActiveRegistration(registration: ServiceWorkerRegis
     registration.installing.postMessage({ type: 'SKIP_WAITING' });
   }
 
-  // 1. Intentar con navigator.serviceWorker.ready con timeout de 3s
-  try {
-    const readyPromise = navigator.serviceWorker.ready;
-    const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
-    const readyReg = await Promise.race([readyPromise, timeoutPromise]);
-    if (readyReg && readyReg.active) {
-      return readyReg;
-    }
-  } catch (e) {}
-
-  // 2. Escuchar statechange si hay un worker en transición
+  // 1. Escuchar statechange si hay un worker en transición
   const sw = registration.installing || registration.waiting || registration.active;
   if (sw && sw.state !== 'activated') {
     await new Promise<void>((resolve) => {
-      const timer = setTimeout(resolve, 2500);
+      const timer = setTimeout(resolve, 4000);
       const onStateChange = () => {
         if (sw.state === 'activated') {
           sw.removeEventListener('statechange', onStateChange);
@@ -152,6 +142,17 @@ export async function waitForActiveRegistration(registration: ServiceWorkerRegis
       sw.addEventListener('statechange', onStateChange);
     });
   }
+
+  // 2. Intentar con navigator.serviceWorker.ready con timeout de 3s
+  try {
+    const readyReg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+    ]);
+    if (readyReg && readyReg.active) {
+      return readyReg;
+    }
+  } catch (e) {}
 
   const latest = await navigator.serviceWorker.getRegistration();
   return latest || registration;
@@ -275,6 +276,25 @@ export async function subscribeToPush(rawMemberId: string): Promise<{ success: b
   }
 
   registration = await waitForActiveRegistration(registration);
+
+  if (!registration.active) {
+    try {
+      const readyReg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500))
+      ]);
+      if (readyReg && readyReg.active) {
+        registration = readyReg;
+      }
+    } catch {}
+  }
+
+  if (!registration.active) {
+    return {
+      success: false,
+      error: 'El Service Worker se está inicializando. Por favor deslizá hacia abajo para recargar la página y volvé a tocar Activar.'
+    };
+  }
 
   if (!registration.pushManager) {
     return {
