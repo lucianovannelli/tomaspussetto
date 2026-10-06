@@ -911,6 +911,31 @@ export default function RoutineDetailView({ routineId }: Props) {
                               <span>Ver Técnica</span>
                             </button>
                           )}
+
+                          {/* Botón rápido de video de ejecución en la cabecera */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const videoData = traineeVideos[exercise.id];
+                              if (videoData) {
+                                handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`);
+                              } else {
+                                fileInputRefs.current[exercise.id]?.click();
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs border ${
+                              traineeVideos[exercise.id]
+                                ? 'bg-[#26160d] text-amber-300 border-[#26160d]'
+                                : 'bg-gradient-to-r from-amber-50 to-amber-100/90 border-amber-300 text-amber-950 hover:bg-amber-200/80'
+                            }`}
+                          >
+                            <span>📹</span>
+                            <span>
+                              {traineeVideos[exercise.id]
+                                ? (isCoachUser ? 'Video Alumna ▶' : 'Ver Mi Video ▶')
+                                : (isCoachUser ? 'Subir Video' : 'Subir Mi Video')}
+                            </span>
+                          </button>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
