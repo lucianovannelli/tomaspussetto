@@ -896,14 +896,16 @@ export default function RoutineDetailView({ routineId }: Props) {
                 return (
                   <li key={exercise.id} className="rounded-3xl border border-[#e6dfd5]/90 bg-gradient-to-b from-white via-white/95 to-[#faf7f2]/60 p-4 sm:p-5 space-y-4 shadow-[0_4px_16px_-4px_rgba(38,22,13,0.04),inset_0_1px_0_#ffffff]">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex flex-col gap-1 flex-1">
+                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-[#1c1a17] leading-snug break-words">
+                          {exercise.name}
+                        </h3>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-xl font-extrabold text-[#1c1a17]">{exercise.name}</h3>
                           {exercise.videoUrl && (
                             <button
                               type="button"
                               onClick={() => handleOpenVideo(exercise.videoUrl!, exercise.name)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#faf7f2] to-[#f5f0e8] hover:to-[#e6dfd5] border border-[#d5c7b5] text-[#26160d] text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#faf7f2] to-[#f5f0e8] hover:to-[#e6dfd5] border border-[#d5c7b5] text-[#26160d] text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs shrink-0"
                             >
                               <svg className="w-3.5 h-3.5 text-[#26160d] fill-current" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
@@ -912,7 +914,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                             </button>
                           )}
 
-                          {/* Botón rápido de video de ejecución en la cabecera */}
+                          {/* Botón de video de ejecución inmediatamente a la derecha de Ver Técnica */}
                           <button
                             type="button"
                             onClick={() => {
@@ -923,7 +925,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                                 fileInputRefs.current[exercise.id]?.click();
                               }
                             }}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs border ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs border shrink-0 ${
                               traineeVideos[exercise.id]
                                 ? 'bg-[#26160d] text-amber-300 border-[#26160d]'
                                 : 'bg-gradient-to-r from-amber-50 to-amber-100/90 border-amber-300 text-amber-950 hover:bg-amber-200/80'
@@ -1124,7 +1126,7 @@ export default function RoutineDetailView({ routineId }: Props) {
                       const isUploading = uploadProgress !== undefined;
 
                       return (
-                        <div className="space-y-2">
+                        <>
                           <input
                             type="file"
                             accept="video/*"
@@ -1133,91 +1135,84 @@ export default function RoutineDetailView({ routineId }: Props) {
                             onChange={(e) => handleSelectFile(exercise.id, e)}
                           />
 
-                          {videoData ? (
-                            <div className="rounded-2xl bg-gradient-to-br from-[#26160d]/5 via-[#faf7f2] to-amber-50/70 border border-[#e6dfd5] p-3 sm:p-3.5 flex flex-col gap-2.5 shadow-xs">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#321d12] to-[#1c1008] text-amber-300 flex items-center justify-center text-sm shrink-0 shadow-2xs">
-                                    📹
+                          {(videoData || isUploading || videoError[exercise.id]) && (
+                            <div className="space-y-2">
+                              {videoData ? (
+                                <div className="rounded-2xl bg-gradient-to-br from-[#26160d]/5 via-[#faf7f2] to-amber-50/70 border border-[#e6dfd5] p-3 sm:p-3.5 flex flex-col gap-2.5 shadow-xs">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#321d12] to-[#1c1008] text-amber-300 flex items-center justify-center text-sm shrink-0 shadow-2xs">
+                                        📹
+                                      </div>
+                                      <div className="min-w-0">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-[#8c7a6b] block">
+                                          {isCoachUser ? 'Video de la Alumna' : 'Tu video de ejecución'}
+                                        </span>
+                                        <span className="text-xs font-bold text-[#26160d] truncate block">
+                                          {videoData.uploadedAt ? formatVideoDate(videoData.uploadedAt) : 'Grabación disponible'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] text-xs font-bold shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer"
+                                      >
+                                        <span className="text-xs">▶️</span>
+                                        <span>Ver video</span>
+                                      </button>
+                                      {!isCoachUser && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteVideo(exercise.id)}
+                                          className="w-8 h-8 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center text-xs transition active:scale-90 cursor-pointer"
+                                          title="Eliminar video"
+                                        >
+                                          🗑️
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="min-w-0">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-[#8c7a6b] block">
-                                      {isCoachUser ? 'Video de la Alumna' : 'Tu video de ejecución'}
-                                    </span>
-                                    <span className="text-xs font-bold text-[#26160d] truncate block">
-                                      {videoData.uploadedAt ? formatVideoDate(videoData.uploadedAt) : 'Grabación disponible'}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] text-xs font-bold shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer"
-                                  >
-                                    <span className="text-xs">▶️</span>
-                                    <span>Ver video</span>
-                                  </button>
                                   {!isCoachUser && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteVideo(exercise.id)}
-                                      className="w-8 h-8 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center text-xs transition active:scale-90 cursor-pointer"
-                                      title="Eliminar video"
-                                    >
-                                      🗑️
-                                    </button>
+                                    <div className="flex items-center justify-between text-[11px] text-[#8c7a6b] pt-1 border-t border-[#e6dfd5]/60">
+                                      <span>¿Querés volver a grabarte?</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => fileInputRefs.current[exercise.id]?.click()}
+                                        className="font-bold text-[#26160d] hover:underline cursor-pointer"
+                                      >
+                                        Reemplazar video 🔄
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
-                              </div>
-                              {!isCoachUser && (
-                                <div className="flex items-center justify-between text-[11px] text-[#8c7a6b] pt-1 border-t border-[#e6dfd5]/60">
-                                  <span>¿Querés volver a grabarte?</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => fileInputRefs.current[exercise.id]?.click()}
-                                    className="font-bold text-[#26160d] hover:underline cursor-pointer"
-                                  >
-                                    Reemplazar video 🔄
-                                  </button>
+                              ) : isUploading ? (
+                                <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 space-y-2">
+                                  <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                                    <span className="flex items-center gap-2">
+                                      <span className="inline-block animate-spin">⏳</span>
+                                      Subiendo video de ejecución...
+                                    </span>
+                                    <span>{uploadProgress}%</span>
+                                  </div>
+                                  <div className="w-full h-2 rounded-full bg-amber-200 overflow-hidden">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-amber-500 to-[#26160d] transition-all duration-200 rounded-full"
+                                      style={{ width: `${uploadProgress}%` }}
+                                    />
+                                  </div>
                                 </div>
+                              ) : null}
+
+                              {videoError[exercise.id] && (
+                                <p className="text-[11px] font-bold text-red-600 px-1">
+                                  ⚠️ {videoError[exercise.id]}
+                                </p>
                               )}
                             </div>
-                          ) : isUploading ? (
-                            <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 space-y-2">
-                              <div className="flex items-center justify-between text-xs font-bold text-amber-950">
-                                <span className="flex items-center gap-2">
-                                  <span className="inline-block animate-spin">⏳</span>
-                                  Subiendo video de ejecución...
-                                </span>
-                                <span>{uploadProgress}%</span>
-                              </div>
-                              <div className="w-full h-2 rounded-full bg-amber-200 overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-amber-500 to-[#26160d] transition-all duration-200 rounded-full"
-                                  style={{ width: `${uploadProgress}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => fileInputRefs.current[exercise.id]?.click()}
-                                className="flex-1 py-2 px-3 rounded-xl border border-dashed border-[#8c7a6b]/40 hover:border-[#26160d] bg-white/70 hover:bg-[#faf7f2] text-xs font-bold text-[#6b584d] hover:text-[#26160d] transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer shadow-2xs"
-                              >
-                                <span className="text-sm">📹</span>
-                                <span>{isCoachUser ? 'Subir video de corrección' : 'Cargar mi video de ejecución'}</span>
-                              </button>
-                            </div>
                           )}
-
-                          {videoError[exercise.id] && (
-                            <p className="text-[11px] font-bold text-red-600 px-1">
-                              ⚠️ {videoError[exercise.id]}
-                            </p>
-                          )}
-                        </div>
+                        </>
                       );
                     })()}
 
