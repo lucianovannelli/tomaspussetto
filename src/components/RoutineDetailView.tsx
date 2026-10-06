@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl, saveExerciseNote as apiSaveExerciseNote, saveExerciseNoteReaction } from '../lib/api';
+import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl, saveExerciseNote as apiSaveExerciseNote, saveExerciseNoteReaction, uploadExerciseVideo, deleteExerciseVideo, resolveMediaUrl } from '../lib/api';
 import type { RoutineDetail, RoutineBlock, NoteAuthor, ExerciseNoteData } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
@@ -7,18 +7,34 @@ interface Props {
   routineId: string;
 }
 
+function formatVideoDate(isoStr?: string) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
 export default function RoutineDetailView({ routineId }: Props) {
   const [routine, setRoutine] = useState<RoutineDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
+  const [activeVideo, setActiveVideo] = useState<{ url: string; title: string; isDirectVideo?: boolean } | null>(null);
   const [isVideoVertical, setIsVideoVertical] = useState(true);
 
   const handleOpenVideo = (url: string, title: string) => {
     const isExplicitHorizontal = url.includes('watch?v=') && !url.includes('shorts');
     setIsVideoVertical(!isExplicitHorizontal);
-    setActiveVideo({ url, title });
+    setActiveVideo({ url, title, isDirectVideo: false });
   };
+
+  const handleOpenDirectVideo = (url: string, title: string) => {
+    setIsVideoVertical(true);
+    setActiveVideo({ url, title, isDirectVideo: true });
+  };
+
   const [weights, setWeights] = useState<Record<string, string[]>>({});
   const [roundInput, setRoundInput] = useState('');
   const [activeWeightEditor, setActiveWeightEditor] = useState<{
@@ -43,6 +59,12 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [currentNoteInput, setCurrentNoteInput] = useState('');
   const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Trainee Video states
+  const [traineeVideos, setTraineeVideos] = useState<Record<string, { url: string; uploadedAt?: string } | null>>({});
+  const [uploadingVideos, setUploadingVideos] = useState<Record<string, number>>({});
+  const [videoError, setVideoError] = useState<Record<string, string>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -132,6 +154,7 @@ export default function RoutineDetailView({ routineId }: Props) {
         const initialWeights: Record<string, string[]> = {};
         const initialNotes: Record<string, ExerciseNoteData> = {};
         const initialReactions: Record<string, string | null> = {};
+        const initialVideos: Record<string, { url: string; uploadedAt?: string } | null> = {};
 
         // Load persisted reactions from localStorage
         try {
@@ -144,6 +167,19 @@ export default function RoutineDetailView({ routineId }: Props) {
           }
         } catch (e) {
           console.error('Error loading reactions from localStorage', e);
+        }
+
+        // Load persisted videos from localStorage
+        try {
+          const storedVideos = localStorage.getItem(`tp_routine_videos_${routineId}`);
+          if (storedVideos) {
+            const parsed = JSON.parse(storedVideos);
+            if (parsed && typeof parsed === 'object') {
+              Object.assign(initialVideos, parsed);
+            }
+          }
+        } catch (e) {
+          console.error('Error loading videos from localStorage', e);
         }
 
         // Load persisted notes from localStorage
@@ -195,14 +231,22 @@ export default function RoutineDetailView({ routineId }: Props) {
             if (exercise.traineeNoteReaction !== undefined) {
               initialReactions[exercise.id] = exercise.traineeNoteReaction;
             }
+            if (exercise.traineeVideoUrl) {
+              initialVideos[exercise.id] = {
+                url: exercise.traineeVideoUrl,
+                uploadedAt: exercise.traineeVideoUploadedAt || undefined
+              };
+            }
           });
         });
         setWeights(initialWeights);
         setExerciseNotes(initialNotes);
         setReactions(initialReactions);
+        setTraineeVideos(initialVideos);
         try {
           localStorage.setItem(`tp_routine_notes_${routineId}`, JSON.stringify(initialNotes));
           localStorage.setItem(`tp_routine_reactions_${routineId}`, JSON.stringify(initialReactions));
+          localStorage.setItem(`tp_routine_videos_${routineId}`, JSON.stringify(initialVideos));
         } catch (e) {
           console.error('Error saving initial notes and reactions to localStorage cache', e);
         }
@@ -274,6 +318,64 @@ export default function RoutineDetailView({ routineId }: Props) {
     } catch (e) {
       console.error('Error saving reaction to API', e);
     }
+  };
+
+  const handleSelectFile = async (exerciseId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    if (file.size > 70 * 1024 * 1024) {
+      setVideoError((prev) => ({ ...prev, [exerciseId]: 'El video no debe superar los 70 MB.' }));
+      return;
+    }
+
+    setVideoError((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+
+    setUploadingVideos((prev) => ({ ...prev, [exerciseId]: 0 }));
+
+    try {
+      const res = await uploadExerciseVideo(exerciseId, file, (percent) => {
+        setUploadingVideos((prev) => ({ ...prev, [exerciseId]: percent }));
+      });
+
+      if (res.ok && res.videoUrl) {
+        const nextVideos = {
+          ...traineeVideos,
+          [exerciseId]: { url: res.videoUrl, uploadedAt: res.uploadedAt || new Date().toISOString() }
+        };
+        setTraineeVideos(nextVideos);
+        try {
+          localStorage.setItem(`tp_routine_videos_${routineId}`, JSON.stringify(nextVideos));
+        } catch (err) {}
+      } else {
+        setVideoError((prev) => ({ ...prev, [exerciseId]: res.error || 'No se pudo subir el video.' }));
+      }
+    } catch (err: any) {
+      setVideoError((prev) => ({ ...prev, [exerciseId]: err?.message || 'Error al subir el video.' }));
+    } finally {
+      setUploadingVideos((prev) => {
+        const next = { ...prev };
+        delete next[exerciseId];
+        return next;
+      });
+    }
+  };
+
+  const handleDeleteVideo = async (exerciseId: string) => {
+    if (!confirm('¿Seguro que querés eliminar el video de este ejercicio?')) return;
+    const nextVideos = { ...traineeVideos };
+    delete nextVideos[exerciseId];
+    setTraineeVideos(nextVideos);
+    try {
+      localStorage.setItem(`tp_routine_videos_${routineId}`, JSON.stringify(nextVideos));
+    } catch (err) {}
+
+    await deleteExerciseVideo(exerciseId);
   };
 
   const dayTabs = useMemo(() => {
@@ -990,6 +1092,110 @@ export default function RoutineDetailView({ routineId }: Props) {
                       </div>
                     )}
 
+                    {/* Video de Ejecución de la Alumna */}
+                    {(() => {
+                      const videoData = traineeVideos[exercise.id];
+                      const uploadProgress = uploadingVideos[exercise.id];
+                      const isUploading = uploadProgress !== undefined;
+
+                      return (
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            accept="video/*"
+                            ref={(el) => { fileInputRefs.current[exercise.id] = el; }}
+                            className="hidden"
+                            onChange={(e) => handleSelectFile(exercise.id, e)}
+                          />
+
+                          {videoData ? (
+                            <div className="rounded-2xl bg-gradient-to-br from-[#26160d]/5 via-[#faf7f2] to-amber-50/70 border border-[#e6dfd5] p-3 sm:p-3.5 flex flex-col gap-2.5 shadow-xs">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#321d12] to-[#1c1008] text-amber-300 flex items-center justify-center text-sm shrink-0 shadow-2xs">
+                                    📹
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-[#8c7a6b] block">
+                                      {isCoachUser ? 'Video de la Alumna' : 'Tu video de ejecución'}
+                                    </span>
+                                    <span className="text-xs font-bold text-[#26160d] truncate block">
+                                      {videoData.uploadedAt ? formatVideoDate(videoData.uploadedAt) : 'Grabación disponible'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#321d12] to-[#1c1008] text-[#f5f0e8] text-xs font-bold shadow-xs hover:shadow-sm active:scale-95 transition-all cursor-pointer"
+                                  >
+                                    <span className="text-xs">▶️</span>
+                                    <span>Ver video</span>
+                                  </button>
+                                  {!isCoachUser && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteVideo(exercise.id)}
+                                      className="w-8 h-8 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center text-xs transition active:scale-90 cursor-pointer"
+                                      title="Eliminar video"
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              {!isCoachUser && (
+                                <div className="flex items-center justify-between text-[11px] text-[#8c7a6b] pt-1 border-t border-[#e6dfd5]/60">
+                                  <span>¿Querés volver a grabarte?</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => fileInputRefs.current[exercise.id]?.click()}
+                                    className="font-bold text-[#26160d] hover:underline cursor-pointer"
+                                  >
+                                    Reemplazar video 🔄
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : isUploading ? (
+                            <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-3.5 space-y-2">
+                              <div className="flex items-center justify-between text-xs font-bold text-amber-950">
+                                <span className="flex items-center gap-2">
+                                  <span className="inline-block animate-spin">⏳</span>
+                                  Subiendo video de ejecución...
+                                </span>
+                                <span>{uploadProgress}%</span>
+                              </div>
+                              <div className="w-full h-2 rounded-full bg-amber-200 overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-amber-500 to-[#26160d] transition-all duration-200 rounded-full"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => fileInputRefs.current[exercise.id]?.click()}
+                                className="flex-1 py-2 px-3 rounded-xl border border-dashed border-[#8c7a6b]/40 hover:border-[#26160d] bg-white/70 hover:bg-[#faf7f2] text-xs font-bold text-[#6b584d] hover:text-[#26160d] transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer shadow-2xs"
+                              >
+                                <span className="text-sm">📹</span>
+                                <span>{isCoachUser ? 'Subir video de corrección' : 'Cargar mi video de ejecución'}</span>
+                              </button>
+                            </div>
+                          )}
+
+                          {videoError[exercise.id] && (
+                            <p className="text-[11px] font-bold text-red-600 px-1">
+                              ⚠️ {videoError[exercise.id]}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {hasReps && (
                       <div className="space-y-3">
                         <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8c7a6b]">Pesos por vuelta</p>
@@ -1515,13 +1721,23 @@ export default function RoutineDetailView({ routineId }: Props) {
             </div>
 
             <div className={`relative w-full ${isVideoVertical ? 'aspect-[9/16] max-h-[68vh]' : 'aspect-video'} rounded-2xl overflow-hidden bg-black shadow-inner flex items-center justify-center mx-auto transition-all duration-300`}>
-              <iframe
-                src={getYouTubeEmbedUrl(activeVideo.url) || ''}
-                title={activeVideo.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              ></iframe>
+              {activeVideo.isDirectVideo || !getYouTubeEmbedUrl(activeVideo.url) ? (
+                <video
+                  src={resolveMediaUrl(activeVideo.url) || activeVideo.url}
+                  controls
+                  playsInline
+                  autoPlay
+                  className="w-full h-full object-contain bg-black"
+                />
+              ) : (
+                <iframe
+                  src={getYouTubeEmbedUrl(activeVideo.url) || ''}
+                  title={activeVideo.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">

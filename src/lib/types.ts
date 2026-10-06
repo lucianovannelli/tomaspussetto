@@ -36,6 +36,8 @@ export interface Exercise {
   coachNotes?: string;
   traineeNotes?: string;
   traineeNoteReaction?: string | null;
+  traineeVideoUrl?: string | null;
+  traineeVideoUploadedAt?: string | null;
 }
 
 export interface RoutineBlock {

@@ -591,6 +591,118 @@ export async function saveExerciseNoteReaction(
   }
 }
 
+export function resolveMediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url;
+  const baseUrl = API_BASE.replace(/\/api\/mobile\/?$/, '');
+  return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
+export async function uploadExerciseVideo(
+  exerciseId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ ok: boolean; videoUrl?: string; uploadedAt?: string; error?: string }> {
+  if (isDemoMode()) {
+    return new Promise((resolve) => {
+      let pct = 0;
+      const interval = setInterval(() => {
+        pct += 25;
+        if (onProgress) onProgress(pct);
+        if (pct >= 100) {
+          clearInterval(interval);
+          resolve({
+            ok: true,
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            uploadedAt: new Date().toISOString()
+          });
+        }
+      }, 300);
+    });
+  }
+
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append('video', file);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(percent);
+      }
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+          resolve({
+            ok: true,
+            videoUrl: data.videoUrl,
+            uploadedAt: data.uploadedAt
+          });
+        } else {
+          resolve({
+            ok: false,
+            error: data.error || `Error del servidor (${xhr.status})`
+          });
+        }
+      } catch (e: any) {
+        resolve({
+          ok: false,
+          error: 'Respuesta inválida del servidor.'
+        });
+      }
+    };
+
+    xhr.onerror = () => {
+      resolve({
+        ok: false,
+        error: 'Error de conexión de red durante la subida.'
+      });
+    };
+
+    xhr.open('POST', `${API_BASE}/exercise/${encodeURIComponent(exerciseId)}/video`);
+    xhr.send(formData);
+  });
+}
+
+export async function deleteExerciseVideo(exerciseId: string): Promise<boolean> {
+  if (isDemoMode()) return true;
+  try {
+    const res = await fetch(`${API_BASE}/exercise/${encodeURIComponent(exerciseId)}/video`, {
+      method: 'DELETE'
+    });
+    return res.ok;
+  } catch (e) {
+    console.error('Error deleting exercise video:', e);
+    return false;
+  }
+}
+
+export async function saveExerciseVideoUrl(
+  routineId: string,
+  exerciseId: string,
+  url: string | null
+): Promise<boolean> {
+  if (isDemoMode()) return true;
+  try {
+    const res = await fetch(`${API_BASE}/routine/${encodeURIComponent(routineId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        exerciseId,
+        traineeVideoUrl: url
+      })
+    });
+    return res.ok;
+  } catch (e) {
+    console.error('Error saving exercise video URL:', e);
+    return false;
+  }
+}
+
 
 export async function fetchMemberPayments(memberId: string): Promise<Payment[]> {
   if (isDemoMode() || memberId === '999') {
