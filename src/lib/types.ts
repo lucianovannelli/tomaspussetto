@@ -35,6 +35,7 @@ export interface Exercise {
   notes?: string;
   coachNotes?: string;
   traineeNotes?: string;
+  traineeNoteReaction?: string | null;
 }
 
 export interface RoutineBlock {

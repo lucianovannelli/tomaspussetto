@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl, saveExerciseNote as apiSaveExerciseNote } from '../lib/api';
+import { fetchRoutine, saveExerciseWeight, completeRoutine, isDemoMode, saveExerciseLikeStatus, isBasicMode, setBasicMode, getYouTubeEmbedUrl, saveExerciseNote as apiSaveExerciseNote, saveExerciseNoteReaction } from '../lib/api';
 import type { RoutineDetail, RoutineBlock, NoteAuthor, ExerciseNoteData } from '../lib/types';
 import { navigate } from 'astro:transitions/client';
 
@@ -34,13 +34,24 @@ export default function RoutineDetailView({ routineId }: Props) {
   const [activeTabId, setActiveTabId] = useState('');
   const [selectedRoundIndex, setSelectedRoundIndex] = useState<number | null>(null);
   
-  // Exercise Notes states
+  // Exercise Notes & Reactions states
   const [exerciseNotes, setExerciseNotes] = useState<Record<string, ExerciseNoteData>>({});
+  const [reactions, setReactions] = useState<Record<string, string | null>>({});
+  const [currentMemberId, setCurrentMemberId] = useState<string | null>(null);
   const [activeNoteEditor, setActiveNoteEditor] = useState<{ exerciseId: string; exerciseName: string } | null>(null);
   const [selectedNoteAuthor, setSelectedNoteAuthor] = useState<NoteAuthor>('trainee');
   const [currentNoteInput, setCurrentNoteInput] = useState('');
   const [noteSavedFeedback, setNoteSavedFeedback] = useState(false);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const id = localStorage.getItem('tp_member_id') || localStorage.getItem('ksc_member_id');
+      setCurrentMemberId(id);
+    }
+  }, []);
+
+  const isCoachUser = currentMemberId === '1';
 
   // Completion states
   const [isCompletedState, setIsCompletedState] = useState(false);
@@ -120,6 +131,20 @@ export default function RoutineDetailView({ routineId }: Props) {
         setIsCompletedState(data?.completed || false);
         const initialWeights: Record<string, string[]> = {};
         const initialNotes: Record<string, ExerciseNoteData> = {};
+        const initialReactions: Record<string, string | null> = {};
+
+        // Load persisted reactions from localStorage
+        try {
+          const storedReactions = localStorage.getItem(`tp_routine_reactions_${routineId}`);
+          if (storedReactions) {
+            const parsed = JSON.parse(storedReactions);
+            if (parsed && typeof parsed === 'object') {
+              Object.assign(initialReactions, parsed);
+            }
+          }
+        } catch (e) {
+          console.error('Error loading reactions from localStorage', e);
+        }
 
         // Load persisted notes from localStorage
         try {
@@ -167,14 +192,19 @@ export default function RoutineDetailView({ routineId }: Props) {
                 initialNotes[exercise.id].trainee = exercise.traineeNotes;
               }
             }
+            if (exercise.traineeNoteReaction !== undefined) {
+              initialReactions[exercise.id] = exercise.traineeNoteReaction;
+            }
           });
         });
         setWeights(initialWeights);
         setExerciseNotes(initialNotes);
+        setReactions(initialReactions);
         try {
           localStorage.setItem(`tp_routine_notes_${routineId}`, JSON.stringify(initialNotes));
+          localStorage.setItem(`tp_routine_reactions_${routineId}`, JSON.stringify(initialReactions));
         } catch (e) {
-          console.error('Error saving initial notes to localStorage cache', e);
+          console.error('Error saving initial notes and reactions to localStorage cache', e);
         }
       })
       .catch(() => {
@@ -193,6 +223,16 @@ export default function RoutineDetailView({ routineId }: Props) {
       currentEntry[author] = trimmed;
     } else {
       delete currentEntry[author];
+      // Si la alumna borra su nota, limpiar también la reacción
+      if (author === 'trainee') {
+        const nextReactions = { ...reactions };
+        delete nextReactions[exerciseId];
+        setReactions(nextReactions);
+        try {
+          localStorage.setItem(`tp_routine_reactions_${routineId}`, JSON.stringify(nextReactions));
+        } catch (e) {}
+        saveExerciseNoteReaction(routineId, exerciseId, null);
+      }
     }
 
     if (currentEntry.coach || currentEntry.trainee) {
@@ -214,6 +254,25 @@ export default function RoutineDetailView({ routineId }: Props) {
       await apiSaveExerciseNote(routineId, exerciseId, author, trimmed);
     } catch (e) {
       console.error('Error saving exercise note to backend', e);
+    }
+  };
+
+  const handleToggleReaction = async (exerciseId: string) => {
+    const currentReaction = reactions[exerciseId] || null;
+    const nextReaction = currentReaction === '👍' ? null : '👍';
+
+    const updated = { ...reactions, [exerciseId]: nextReaction };
+    setReactions(updated);
+    try {
+      localStorage.setItem(`tp_routine_reactions_${routineId}`, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving reactions to localStorage', e);
+    }
+
+    try {
+      await saveExerciseNoteReaction(routineId, exerciseId, nextReaction);
+    } catch (e) {
+      console.error('Error saving reaction to API', e);
     }
   };
 
@@ -872,24 +931,60 @@ export default function RoutineDetailView({ routineId }: Props) {
                                 exerciseName: exercise.name
                               });
                             }}
-                            className="rounded-2xl bg-gradient-to-br from-amber-50/90 to-[#faf7f2] border border-amber-200/90 p-3 text-amber-950 flex items-start gap-2.5 cursor-pointer hover:bg-amber-100/70 transition-all shadow-2xs group"
+                            className="rounded-2xl bg-gradient-to-br from-amber-50/90 to-[#faf7f2] border border-amber-200/90 p-3 text-amber-950 flex flex-col gap-2.5 cursor-pointer hover:bg-amber-100/70 transition-all shadow-2xs group"
                           >
-                            <div className="w-6 h-6 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 shadow-2xs text-[11px] mt-0.5">
-                              🏃
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-200/90 text-amber-900 border border-amber-300/80 text-[9px] font-black uppercase tracking-wider">
-                                  Nota de Alumna
-                                </span>
-                                <span className="text-[10px] font-bold text-amber-800 group-hover:underline">
-                                  Editar ✏️
-                                </span>
+                            <div className="flex items-start gap-2.5">
+                              <div className="w-6 h-6 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 shadow-2xs text-[11px] mt-0.5">
+                                🏃
                               </div>
-                              <p className="text-xs font-semibold text-amber-950 mt-1 whitespace-pre-wrap leading-relaxed">
-                                {noteData.trainee}
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-200/90 text-amber-900 border border-amber-300/80 text-[9px] font-black uppercase tracking-wider">
+                                    Nota de Alumna
+                                  </span>
+                                  <span className="text-[10px] font-bold text-amber-800 group-hover:underline">
+                                    Editar ✏️
+                                  </span>
+                                </div>
+                                <p className="text-xs font-semibold text-amber-950 mt-1 whitespace-pre-wrap leading-relaxed">
+                                  {noteData.trainee}
+                                </p>
+                              </div>
                             </div>
+
+                            {/* Reacción del Entrenador (👍) */}
+                            {(isCoachUser || reactions[exercise.id] === '👍') && (
+                              <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                                {isCoachUser ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleReaction(exercise.id);
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer ${
+                                      reactions[exercise.id] === '👍'
+                                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
+                                        : 'bg-white/95 text-amber-950 border border-amber-300 hover:bg-amber-100'
+                                    }`}
+                                    title={reactions[exercise.id] === '👍' ? 'Quitar visto' : 'Marcar nota como vista'}
+                                  >
+                                    <span className="text-sm leading-none">👍</span>
+                                    <span>{reactions[exercise.id] === '👍' ? 'Visto por vos' : 'Marcar como visto'}</span>
+                                    {reactions[exercise.id] === '👍' && (
+                                      <span className="text-[10px] text-emerald-600 font-semibold ml-0.5">✕</span>
+                                    )}
+                                  </button>
+                                ) : (
+                                  reactions[exercise.id] === '👍' && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px] font-bold shadow-2xs">
+                                      <span className="text-sm leading-none">👍</span>
+                                      <span>Visto por Tomás</span>
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1547,6 +1642,29 @@ export default function RoutineDetailView({ routineId }: Props) {
                   className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 focus:bg-white transition resize-none leading-relaxed"
                 />
               </div>
+
+              {/* Opción para el Entrenador de reaccionar directamente en el modal */}
+              {selectedNoteAuthor === 'trainee' && currentExerciseNotes.trainee && isCoachUser && (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👍</span>
+                    <span className="text-xs font-bold text-amber-950">
+                      {reactions[activeNoteEditor.exerciseId] === '👍' ? 'Marcaste esta nota como vista' : '¿Confirmar que la viste?'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleReaction(activeNoteEditor.exerciseId)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer ${
+                      reactions[activeNoteEditor.exerciseId] === '👍'
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
+                        : 'bg-white text-amber-950 border border-amber-300 hover:bg-amber-100'
+                    }`}
+                  >
+                    {reactions[activeNoteEditor.exerciseId] === '👍' ? 'Visto por vos ✕' : '👍 Marcar visto'}
+                  </button>
+                </div>
+              )}
 
               {noteSavedFeedback && (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-pulse">

@@ -564,6 +564,33 @@ export async function saveExerciseNote(
   }
 }
 
+export async function saveExerciseNoteReaction(
+  routineId: string,
+  exerciseId: string,
+  reaction: string | null
+): Promise<boolean> {
+  if (isDemoMode()) {
+    console.log('Demo Mode: Simulating saving note reaction', { routineId, exerciseId, reaction });
+    return true;
+  }
+  try {
+    const response = await fetch(`${API_BASE}/routine/${encodeURIComponent(routineId)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        exerciseId,
+        traineeNoteReaction: reaction
+      })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to save note reaction via API', error);
+    return false;
+  }
+}
+
 
 export async function fetchMemberPayments(memberId: string): Promise<Payment[]> {
   if (isDemoMode() || memberId === '999') {
