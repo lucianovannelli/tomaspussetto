@@ -1743,13 +1743,29 @@ export default function RoutineDetailView({ routineId }: Props) {
 
             <div className={`relative w-full ${isVideoVertical ? 'aspect-[9/16] max-h-[68vh]' : 'aspect-video'} rounded-2xl overflow-hidden bg-black shadow-inner flex items-center justify-center mx-auto transition-all duration-300`}>
               {activeVideo.isDirectVideo || !getYouTubeEmbedUrl(activeVideo.url) ? (
-                <video
-                  src={resolveMediaUrl(activeVideo.url) || activeVideo.url}
-                  controls
-                  playsInline
-                  autoPlay
-                  className="w-full h-full object-contain bg-black"
-                />
+                (() => {
+                  const mediaUrl = resolveMediaUrl(activeVideo.url) || activeVideo.url;
+                  return (
+                    <video
+                      key={mediaUrl}
+                      controls
+                      playsInline
+                      autoPlay
+                      preload="auto"
+                      className="w-full h-full object-contain bg-black"
+                    >
+                      <source src={mediaUrl} type="video/mp4" />
+                      <source src={mediaUrl} type="video/quicktime" />
+                      <p className="text-white text-xs p-4 text-center">
+                        Tu navegador no pudo reproducir este video en pantalla.
+                        <br />
+                        <a href={mediaUrl} target="_blank" rel="noopener noreferrer" className="underline font-bold text-amber-300 mt-2 inline-block">
+                          Abrir video en nueva pestaña ↗
+                        </a>
+                      </p>
+                    </video>
+                  );
+                })()
               ) : (
                 <iframe
                   src={getYouTubeEmbedUrl(activeVideo.url) || ''}
