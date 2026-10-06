@@ -895,52 +895,12 @@ export default function RoutineDetailView({ routineId }: Props) {
 
                 return (
                   <li key={exercise.id} className="rounded-3xl border border-[#e6dfd5]/90 bg-gradient-to-b from-white via-white/95 to-[#faf7f2]/60 p-4 sm:p-5 space-y-4 shadow-[0_4px_16px_-4px_rgba(38,22,13,0.04),inset_0_1px_0_#ffffff]">
+                    {/* Cabecera: Título y Acciones (Notas / Likes) */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                        <h3 className="text-lg sm:text-xl font-extrabold text-[#1c1a17] leading-snug break-words">
-                          {exercise.name}
-                        </h3>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {exercise.videoUrl && (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenVideo(exercise.videoUrl!, exercise.name)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#faf7f2] to-[#f5f0e8] hover:to-[#e6dfd5] border border-[#d5c7b5] text-[#26160d] text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs shrink-0"
-                            >
-                              <svg className="w-3.5 h-3.5 text-[#26160d] fill-current" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                              <span>Ver Técnica</span>
-                            </button>
-                          )}
-
-                          {/* Botón de video de ejecución inmediatamente a la derecha de Ver Técnica */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const videoData = traineeVideos[exercise.id];
-                              if (videoData) {
-                                handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`);
-                              } else {
-                                fileInputRefs.current[exercise.id]?.click();
-                              }
-                            }}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs border shrink-0 ${
-                              traineeVideos[exercise.id]
-                                ? 'bg-[#26160d] text-amber-300 border-[#26160d]'
-                                : 'bg-gradient-to-r from-amber-50 to-amber-100/90 border-amber-300 text-amber-950 hover:bg-amber-200/80'
-                            }`}
-                          >
-                            <span>📹</span>
-                            <span>
-                              {traineeVideos[exercise.id]
-                                ? (isCoachUser ? 'Video Alumna ▶' : 'Ver Mi Video ▶')
-                                : (isCoachUser ? 'Subir Video' : 'Subir Mi Video')}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-[#1c1a17] leading-snug break-words flex-1 min-w-0">
+                        {exercise.name}
+                      </h3>
+                      <div className="flex items-center gap-2 shrink-0">
                         {/* Botón de Notita para el Ejercicio */}
                         <button
                           type="button"
@@ -1012,6 +972,47 @@ export default function RoutineDetailView({ routineId }: Props) {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Fila horizontal de Videos: Ver Técnica a la izquierda y Subir/Ver Video a su derecha */}
+                    <div className="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar">
+                      {exercise.videoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenVideo(exercise.videoUrl!, exercise.name)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#faf7f2] to-[#f5f0e8] hover:to-[#e6dfd5] border border-[#d5c7b5] text-[#26160d] text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
+                        >
+                          <svg className="w-3.5 h-3.5 text-[#26160d] fill-current" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                          <span>Ver Técnica</span>
+                        </button>
+                      )}
+
+                      {/* Botón de video de ejecución estrictamente a la derecha de Ver Técnica */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const videoData = traineeVideos[exercise.id];
+                          if (videoData) {
+                            handleOpenDirectVideo(videoData.url, `${exercise.name} - ${isCoachUser ? 'Alumna' : 'Mi Ejecución'}`);
+                          } else {
+                            fileInputRefs.current[exercise.id]?.click();
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold transition active:scale-95 cursor-pointer shadow-xs border shrink-0 whitespace-nowrap ${
+                          traineeVideos[exercise.id]
+                            ? 'bg-[#26160d] text-amber-300 border-[#26160d]'
+                            : 'bg-gradient-to-r from-amber-50 to-amber-100/90 border-amber-300 text-amber-950 hover:bg-amber-200/80'
+                        }`}
+                      >
+                        <span>📹</span>
+                        <span>
+                          {traineeVideos[exercise.id]
+                            ? (isCoachUser ? 'Video Alumna ▶' : 'Ver Mi Video ▶')
+                            : (isCoachUser ? 'Subir Video' : 'Subir Mi Video')}
+                        </span>
+                      </button>
                     </div>
 
                     {/* Notas del ejercicio: Entrenador y/o Entrenado */}
